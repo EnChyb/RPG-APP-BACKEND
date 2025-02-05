@@ -1,0 +1,13 @@
+{
+  "name": "rpg-app-backend",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/EnChyb/RPG-APP-BACKEND.git",
+  "author": "EnChyb <144510772+EnChyb@users.noreply.github.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^22.13.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  }
+}
