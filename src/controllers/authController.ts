@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/User";
 
-export const register = async (req: Request, res: Response) => {
+export const register = async (req: Request, res: Response): Promise<any> => {
   const { firstName, lastName, email, password, role } = req.body;
 
   const userExists = await User.findOne({ email });
@@ -24,11 +24,15 @@ export const register = async (req: Request, res: Response) => {
   res.json({ message: "User registered successfully", user });
 };
 
-export const login = async (req: Request, res: Response) => {
+export const login = async (req: Request, res: Response): Promise<any> => {
   const { email, password } = req.body;
   const user = await User.findOne({ email });
 
-  if (!user || !user.password || !(await bcrypt.compare(password, user.password)))
+  if (
+    !user ||
+    !user.password ||
+    !(await bcrypt.compare(password, user.password))
+  )
     return res.status(401).json({ message: "Invalid email or password" });
 
   const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET!, {
