@@ -3,7 +3,7 @@ import morgan from "morgan";
 import cors from "cors";
 // import passport from "./middleware/passportConfig.js";
 
-import authRouter from "./routes/authRoutes";
+import authRouter from "./routes/authRoutes.js";
 // import userRouter from "./routes/api/user.js";
 
 // import authenticateToken from "./middleware/authenticateToken.js";

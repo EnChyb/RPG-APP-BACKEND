@@ -126,17 +126,10 @@
   resolved "https://registry.yarnpkg.com/@types/ms/-/ms-2.1.0.tgz#052aa67a48eccc4309d7f0191b7e41434b90bb78"
   integrity sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==
 
-"@types/node@*":
+"@types/node@*", "@types/node@^22.13.4":
   version "22.13.4"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.4.tgz#3fe454d77cd4a2d73c214008b3e331bfaaf5038a"
   integrity sha512-ywP2X0DYtX3y08eFVx5fNIw7/uIv8hYUKgXoK8oayJlLnKcRfEYCxWMVE1XagUdVtCJlZT1AU4LXEABW+L1Peg==
-  dependencies:
-    undici-types "~6.20.0"
-
-"@types/node@^22.13.1":
-  version "22.13.1"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-22.13.1.tgz#a2a3fefbdeb7ba6b89f40371842162fac0934f33"
-  integrity sha512-jK8uzQlrvXqEU91UxiK5J7pKHyzgnI1Qnl0QDHIgVGuolJhRb9EEl28Cj9b3rGR8B2lhFCtvIm5os8lFnO/1Ew==
   dependencies:
     undici-types "~6.20.0"
 
@@ -229,10 +222,10 @@ basic-auth@~2.0.1:
   dependencies:
     safe-buffer "5.1.2"
 
-bcryptjs@^3.0.0:
-  version "3.0.0"
-  resolved "https://registry.yarnpkg.com/bcryptjs/-/bcryptjs-3.0.0.tgz#90b3ddba08c5dbe1a9e15ac900afdc8fb4772965"
-  integrity sha512-Q2vVGpGC7B7m9wggpcA5lq4OYR5OS1nrXoUpnH9MmogXU8HpxzKg63uxtCrLebY5v/y3o0r7JcGCpR/vTGGn7A==
+bcryptjs@^3.0.1:
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/bcryptjs/-/bcryptjs-3.0.1.tgz#870705ef5c5148de29395a0695ca2e7766cf6c2e"
+  integrity sha512-iY+rRoR0bToRe8LTJkVX2gawo8gmgDQbiFsaKy8fVuG3WXekEQrjasfmWIbJxJHttEKPa+xPxbw3GROnJSmu0A==
 
 binary-extensions@^2.0.0:
   version "2.3.0"
@@ -794,9 +787,9 @@ mongodb@*, mongodb@^6.13.0, mongodb@~6.13.0:
     mongodb-connection-string-url "^3.0.0"
 
 mongoose@^8.10.0:
-  version "8.10.0"
-  resolved "https://registry.yarnpkg.com/mongoose/-/mongoose-8.10.0.tgz#1ad3a168ec062afce95bda7c939c5940306dd0dc"
-  integrity sha512-nLhk3Qrv6q/HpD2k1O7kbBqsq+/kmKpdv5KJ+LLhQlII3e1p/SSLoLP6jMuSiU6+iLK7zFw4T1niAk3mA3QVug==
+  version "8.10.1"
+  resolved "https://registry.yarnpkg.com/mongoose/-/mongoose-8.10.1.tgz#ed7e666753203fe7b7a7d4bad415273c47853dde"
+  integrity sha512-5beTeBZnJNndRXU9rxPol0JmTWZMAtgkPbooROkGilswvrZALDERY4cJrGZmgGwDS9dl0mxiB7si+Mv9Yms2fg==
   dependencies:
     bson "^6.10.1"
     kareem "2.6.3"
