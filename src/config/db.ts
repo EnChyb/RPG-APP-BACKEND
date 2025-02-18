@@ -9,7 +9,7 @@ if (!uri) {
 
 async function connectDB(): Promise<void> {
   try {
-    // await mongoose.connect(uri);
+    await mongoose.connect(uri as string);
     console.log("Database connection successful");
   } catch (error: any) {
     console.error("Database connection error:", error.message);

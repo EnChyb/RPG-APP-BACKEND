@@ -3,7 +3,7 @@ import morgan from "morgan";
 import cors from "cors";
 // import passport from "./middleware/passportConfig.js";
 
-// import authRouter from "./routes/api/auth.js";
+import authRouter from "./routes/authRoutes.js";
 // import userRouter from "./routes/api/user.js";
 
 // import authenticateToken from "./middleware/authenticateToken.js";
@@ -28,7 +28,7 @@ app.use(express.json());
 // app.use(passport.initialize());
 
 // ROUTING
-// app.use("/auth", authRouter);
+app.use("/api/auth", authRouter);
 // app.use("/user", authenticateToken, userRouter);
 
 // MIDDLEWARE - ERRORS
