@@ -25,26 +25,6 @@ const login: RequestHandler = async (req, res): Promise<void> => {
       expiresIn: "1d",
     });
 
-    // const token = (user: {
-    //   id: string;
-    //   firstName: string;
-    //   lastName: string;
-    //   email: string;
-    //   role: string;
-    // }) => {
-    //   jwt.sign(
-    //     {
-    //       userId: user.id,
-    //       firstName: user.firstName,
-    //       lastName: user.lastName,
-    //       email: user.email,
-    //       role: user.role,
-    //     },
-    //     process.env.JWT_SECRET!,
-    //     { expiresIn: "1d" }
-    //   );
-    // };
-
     res.json({
       token,
       user: {

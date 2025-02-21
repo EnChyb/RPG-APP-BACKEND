@@ -1,7 +1,8 @@
-import { RequestHandler, Request } from "express";
+import { Request, Response, NextFunction } from "express";
 
 interface AuthenticatedRequest extends Request {
   user?: {
+    id: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -9,28 +10,20 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-const getUser: RequestHandler = async (
+const getUser = async (
   req: AuthenticatedRequest,
-  res,
-  next
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
-  // try {
-  //   const user = req.user;
-  //   res.json({ user });
-  // } catch (error) {
-  //   next(error);
-  //   console.log(error);
-  // }
   try {
-    console.log("Inside getUser, req.user:", req.user);
     if (!req.user) {
       res.status(401).json({ error: "User not authenticated" });
       return;
     }
+
     res.json({ user: req.user });
   } catch (error) {
     next(error);
-    console.log(error);
   }
 };
 
