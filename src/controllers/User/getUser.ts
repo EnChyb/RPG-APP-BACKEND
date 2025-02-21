@@ -22,10 +22,6 @@ const getUser = async (
       return;
     }
 
-    const avatarUrl = `${req.protocol}://${req.get("host")}/uploads/avatars/${
-      req.user.avatar
-    }`;
-
     res.json({ user: req.user });
   } catch (error) {
     next(error);
