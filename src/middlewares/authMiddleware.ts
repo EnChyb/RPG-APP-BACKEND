@@ -9,6 +9,7 @@ interface AuthenticatedRequest extends Request {
     lastName: string;
     email: string;
     role: string;
+    avatar?: string;
   };
 }
 
@@ -30,7 +31,7 @@ const protect = async (
     };
 
     const user = await User.findById(decoded.userId)
-      .select("firstName lastName email role")
+      .select("firstName lastName email role avatar")
       .lean();
     if (!user) {
       res.status(401).json({ message: "User not found" });
@@ -43,6 +44,7 @@ const protect = async (
       lastName: user.lastName || "",
       email: user.email || "",
       role: user.role,
+      avatar: user.avatar || "https://www.gravatar.com/avatar/",
     };
 
     next();

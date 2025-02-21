@@ -33,6 +33,7 @@ const login: RequestHandler = async (req, res): Promise<void> => {
         lastName: user.lastName,
         email,
         role: user.role,
+        avatar: user.avatar,
       },
     });
   } catch (error) {

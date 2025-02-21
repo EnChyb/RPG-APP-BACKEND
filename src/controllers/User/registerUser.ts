@@ -2,9 +2,14 @@ import { RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import User from "../../models/User.js";
 
+const DEFAULT_AVATAR = "https://www.gravatar.com/avatar/";
+
 const register: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { firstName, lastName, email, password, role } = req.body;
+    const avatar = req.file
+      ? `/uploads/avatars/${req.file.filename}`
+      : DEFAULT_AVATAR;
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -17,7 +22,9 @@ const register: RequestHandler = async (req, res): Promise<void> => {
       lastName,
       email,
       role,
+      avatar,
     });
+
     newUser.password = await bcrypt.hash(password, 10);
     await newUser.save();
 

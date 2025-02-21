@@ -7,6 +7,7 @@ interface AuthenticatedRequest extends Request {
     lastName: string;
     email: string;
     role: string;
+    avatar?: string;
   };
 }
 
@@ -20,6 +21,10 @@ const getUser = async (
       res.status(401).json({ error: "User not authenticated" });
       return;
     }
+
+    const avatarUrl = `${req.protocol}://${req.get("host")}/uploads/avatars/${
+      req.user.avatar
+    }`;
 
     res.json({ user: req.user });
   } catch (error) {
