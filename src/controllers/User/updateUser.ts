@@ -38,7 +38,7 @@ const updateUser = async (
 
     if (email) {
       const existingUser = await User.findOne({ email });
-      if (existingUser && existingUser._id.toString() !== userId) {
+      if (existingUser && existingUser.id.toString() !== userId) {
         res.status(400).json({ message: "Email is already in use" });
         return;
       }

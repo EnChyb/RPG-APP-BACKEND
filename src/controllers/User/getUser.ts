@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
+import { token } from "morgan";
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     firstName: string;

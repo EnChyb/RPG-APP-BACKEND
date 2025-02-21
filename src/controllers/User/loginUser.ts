@@ -25,8 +25,10 @@ const login: RequestHandler = async (req, res): Promise<void> => {
       expiresIn: "1d",
     });
 
+    user.token = token;
+    await user.save();
+
     res.json({
-      token,
       user: {
         userId: user.id,
         firstName: user.firstName,
@@ -34,6 +36,7 @@ const login: RequestHandler = async (req, res): Promise<void> => {
         email,
         role: user.role,
         avatar: user.avatar,
+        token: token,
       },
     });
   } catch (error) {

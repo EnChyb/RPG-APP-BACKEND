@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
-interface AuthenticatedRequest extends Request {
+export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     firstName: string;
@@ -10,6 +10,7 @@ interface AuthenticatedRequest extends Request {
     email: string;
     role: string;
     avatar?: string;
+    token: string | null;
   };
 }
 
@@ -31,10 +32,12 @@ const protect = async (
     };
 
     const user = await User.findById(decoded.userId)
-      .select("firstName lastName email role avatar")
+      .select("firstName lastName email role avatar token")
       .lean();
-    if (!user) {
-      res.status(401).json({ message: "User not found" });
+    if (!user || user.token !== token) {
+      res
+        .status(401)
+        .json({ message: "Unauthorized, token is invalid or user logged out" });
       return;
     }
 
@@ -42,9 +45,10 @@ const protect = async (
       id: user._id.toString(),
       firstName: user.firstName || "",
       lastName: user.lastName || "",
-      email: user.email || "",
+      email: user.email,
       role: user.role,
-      avatar: user.avatar || "https://www.gravatar.com/avatar/",
+      avatar: user.avatar,
+      token: user.token,
     };
 
     next();
