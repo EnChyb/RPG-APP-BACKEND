@@ -6,7 +6,7 @@ export const createCharacter: RequestHandler = async (
   req: AuthenticatedRequest,
   res,
   next
-) => {
+): Promise<void> => {
   try {
     const skillToAttributeMap: Record<
       string,
@@ -26,13 +26,71 @@ export const createCharacter: RequestHandler = async (
       Heal: "Empathy",
     };
 
-    // Ensure skills have `linkedAttribute` before saving
-    if (req.body.skills) {
-      Object.keys(req.body.skills).forEach((skill) => {
-        if (skillToAttributeMap[skill]) {
-          req.body.skills[skill].linkedAttribute = skillToAttributeMap[skill];
-        }
-      });
+    // Ensure required RPGSystem
+    if (!req.body.RPGSystem) {
+      req.body.RPGSystem = "Year Zero Engine";
+    }
+
+    // Check if all predefined skills are provided
+    if (!req.body.skills) {
+      res
+        .status(400)
+        .json({ message: "Missing required skills in request body" });
+      return;
+    }
+
+    for (const skill of Object.keys(skillToAttributeMap)) {
+      if (
+        !req.body.skills[skill] ||
+        req.body.skills[skill].value === undefined
+      ) {
+        res.status(400).json({
+          message: `Missing value for skill: ${skill}. All predefined skills require a numeric value.`,
+        });
+        return;
+      }
+
+      req.body.skills[skill].linkedAttribute = skillToAttributeMap[skill];
+      req.body.skills[skill].displayName = skill;
+    }
+
+    // Ensure additional skills are properly structured
+    if (!Array.isArray(req.body.additionalSkills)) {
+      req.body.additionalSkills = [];
+    } else {
+      try {
+        req.body.additionalSkills = req.body.additionalSkills.map(
+          (skill: {
+            displayName?: string;
+            value?: number;
+            linkedAttribute?: string;
+          }) => {
+            if (
+              !skill.displayName ||
+              skill.value === undefined ||
+              !skill.linkedAttribute
+            ) {
+              throw new Error(
+                "Each additional skill must include displayName, value, and linkedAttribute"
+              );
+            }
+            return {
+              displayName: skill.displayName,
+              value: skill.value,
+              linkedAttribute: skill.linkedAttribute as
+                | "Strength"
+                | "Agility"
+                | "Wits"
+                | "Empathy",
+            };
+          }
+        );
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error";
+        res.status(400).json({ message: errorMessage });
+        return;
+      }
     }
 
     const character = new Character({ ...req.body, owner: req.user?.id });

@@ -6,9 +6,9 @@ interface IAttribute {
 }
 
 interface ISkill {
+  displayName: string;
   value: number;
-  linkedAttribute?: string;
-  displayName?: string;
+  linkedAttribute: "Strength" | "Agility" | "Wits" | "Empathy";
 }
 
 interface ITalent {
@@ -29,6 +29,7 @@ export interface ICharacter extends Document {
   age: "Młody" | "Dorosły" | "Stary";
   archetype: string;
   race: string;
+  RPGSystem: string;
   appearance?: string;
   bigDream?: string;
   willpower: { value: number; displayName: string };
@@ -38,21 +39,8 @@ export interface ICharacter extends Document {
     Wits: IAttribute;
     Empathy: IAttribute;
   };
-  skills: {
-    Craft: ISkill;
-    Endure: ISkill;
-    Fight: ISkill;
-    Sneak: ISkill;
-    Move: ISkill;
-    Shoot: ISkill;
-    Scout: ISkill;
-    Comprehend: ISkill;
-    Survive: ISkill;
-    Manipulate: ISkill;
-    SenseEmotion: ISkill;
-    Heal: ISkill;
-    additionalSkill?: ISkill;
-  };
+  skills: Record<string, ISkill>;
+  additionalSkills: ISkill[];
   talents?: ITalent[];
   items?: IItem[];
   owner: mongoose.Types.ObjectId;
@@ -64,6 +52,7 @@ const CharacterSchema = new Schema<ICharacter>(
     age: { type: String, enum: ["Młody", "Dorosły", "Stary"], required: true },
     archetype: { type: String, required: true },
     race: { type: String, required: true },
+    RPGSystem: { type: String, default: "Year Zero Engine", required: true },
     appearance: { type: String, required: false },
     bigDream: { type: String, required: false },
     willpower: {
@@ -86,72 +75,32 @@ const CharacterSchema = new Schema<ICharacter>(
       },
     },
     skills: {
-      Craft: {
-        value: Number,
-        displayName: { type: String, default: "Craft" },
-        linkedAttribute: { type: String },
-      },
-      Endure: {
-        value: Number,
-        displayName: { type: String, default: "Endure" },
-        linkedAttribute: { type: String },
-      },
-      Fight: {
-        value: Number,
-        displayName: { type: String, default: "Fight" },
-        linkedAttribute: { type: String },
-      },
-      Sneak: {
-        value: Number,
-        displayName: { type: String, default: "Sneak" },
-        linkedAttribute: { type: String },
-      },
-      Move: {
-        value: Number,
-        displayName: { type: String, default: "Move" },
-        linkedAttribute: { type: String },
-      },
-      Shoot: {
-        value: Number,
-        displayName: { type: String, default: "Shoot" },
-        linkedAttribute: { type: String },
-      },
-      Scout: {
-        value: Number,
-        displayName: { type: String, default: "Scout" },
-        linkedAttribute: { type: String },
-      },
-      Comprehend: {
-        value: Number,
-        displayName: { type: String, default: "Comprehend" },
-        linkedAttribute: { type: String },
-      },
-      Survive: {
-        value: Number,
-        displayName: { type: String, default: "Survive" },
-        linkedAttribute: { type: String },
-      },
-      Manipulate: {
-        value: Number,
-        displayName: { type: String, default: "Manipulate" },
-        linkedAttribute: { type: String },
-      },
-      SenseEmotion: {
-        value: Number,
-        displayName: { type: String, default: "Sense Emotion" },
-        linkedAttribute: { type: String },
-      },
-      Heal: {
-        value: Number,
-        displayName: { type: String, default: "Heal" },
-        linkedAttribute: { type: String },
-      },
-      additionalSkill: {
-        value: Number,
-        displayName: String,
-        linkedAttribute: { type: String },
-      },
+      type: Map,
+      of: new Schema<ISkill>(
+        {
+          displayName: { type: String, required: true },
+          value: { type: Number, required: true },
+          linkedAttribute: {
+            type: String,
+            enum: ["Strength", "Agility", "Wits", "Empathy"],
+            required: true,
+          },
+        },
+        { _id: false }
+      ),
+      required: true,
     },
+    additionalSkills: [
+      {
+        displayName: { type: String, required: true },
+        value: { type: Number, required: true },
+        linkedAttribute: {
+          type: String,
+          enum: ["Strength", "Agility", "Wits", "Empathy"],
+          required: true,
+        },
+      },
+    ],
     talents: [{ id: String, name: String, description: String }],
     items: [
       {
@@ -165,42 +114,6 @@ const CharacterSchema = new Schema<ICharacter>(
   },
   { timestamps: true }
 );
-
-// Automatically assign `linkedAttribute` to skills before saving
-CharacterSchema.pre("save", function (next) {
-  const skillToAttributeMap: Record<
-    Exclude<keyof ICharacter["skills"], "additionalSkill">,
-    "Strength" | "Agility" | "Wits" | "Empathy"
-  > = {
-    Craft: "Strength",
-    Endure: "Strength",
-    Fight: "Strength",
-    Sneak: "Agility",
-    Move: "Agility",
-    Shoot: "Agility",
-    Scout: "Wits",
-    Comprehend: "Wits",
-    Survive: "Wits",
-    Manipulate: "Empathy",
-    SenseEmotion: "Empathy",
-    Heal: "Empathy",
-  };
-
-  Object.keys(skillToAttributeMap).forEach((skill) => {
-    const skillKey = skill as keyof typeof skillToAttributeMap;
-    if (this.skills && this.skills[skillKey]) {
-      this.skills[skillKey].linkedAttribute = skillToAttributeMap[skillKey];
-    }
-  });
-
-  if (this.skills?.additionalSkill) {
-    if (!this.skills.additionalSkill.linkedAttribute) {
-      this.skills.additionalSkill.linkedAttribute = "Strength";
-    }
-  }
-
-  next();
-});
 
 const Character = mongoose.model<ICharacter>("Character", CharacterSchema);
 
