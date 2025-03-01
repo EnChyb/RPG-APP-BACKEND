@@ -93,6 +93,24 @@ export const createCharacter: RequestHandler = async (
       }
     }
 
+    // **📌 FIX: Calculate Wound Limits BEFORE saving**
+    const { Strength, Agility, Wits, Empathy } = req.body.attributes;
+    req.body.wounds = {
+      Damage: { limit: Strength.value, current: 0, displayName: "Damage" },
+      Fatigue: { limit: Agility.value, current: 0, displayName: "Fatigue" },
+      Confusion: { limit: Wits.value, current: 0, displayName: "Confusion" },
+      Doubt: { limit: Empathy.value, current: 0, displayName: "Doubt" },
+    };
+
+    // **Ensure states are initialized**
+    req.body.states = {
+      Hungry: false,
+      Sleepy: false,
+      Thirsty: false,
+      Cold: false,
+    };
+
+    // Create and save character
     const character = new Character({ ...req.body, owner: req.user?.id });
     await character.save();
     res.status(201).json({ message: "Character created", character });

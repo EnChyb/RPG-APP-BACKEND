@@ -5,6 +5,12 @@ interface IAttribute {
   displayName?: string;
 }
 
+interface IWound {
+  limit: number;
+  current: number;
+  displayName: string;
+}
+
 interface ISkill {
   displayName: string;
   value: number;
@@ -38,6 +44,18 @@ export interface ICharacter extends Document {
     Agility: IAttribute;
     Wits: IAttribute;
     Empathy: IAttribute;
+  };
+  wounds: {
+    Damage: IWound;
+    Fatigue: IWound;
+    Confusion: IWound;
+    Doubt: IWound;
+  };
+  states: {
+    Hungry: boolean;
+    Sleepy: boolean;
+    Thirsty: boolean;
+    Cold: boolean;
   };
   skills: Record<string, ISkill>;
   additionalSkills: ISkill[];
@@ -73,6 +91,34 @@ const CharacterSchema = new Schema<ICharacter>(
         value: Number,
         displayName: { type: String, default: "Empathy" },
       },
+    },
+    wounds: {
+      Damage: {
+        limit: { type: Number, required: true },
+        current: { type: Number, default: 0 },
+        displayName: { type: String, default: "Damage" },
+      },
+      Fatigue: {
+        limit: { type: Number, required: true },
+        current: { type: Number, default: 0 },
+        displayName: { type: String, default: "Fatigue" },
+      },
+      Confusion: {
+        limit: { type: Number, required: true },
+        current: { type: Number, default: 0 },
+        displayName: { type: String, default: "Confusion" },
+      },
+      Doubt: {
+        limit: { type: Number, required: true },
+        current: { type: Number, default: 0 },
+        displayName: { type: String, default: "Doubt" },
+      },
+    },
+    states: {
+      Hungry: { type: Boolean, default: false },
+      Sleepy: { type: Boolean, default: false },
+      Thirsty: { type: Boolean, default: false },
+      Cold: { type: Boolean, default: false },
     },
     skills: {
       type: Map,
@@ -114,6 +160,15 @@ const CharacterSchema = new Schema<ICharacter>(
   },
   { timestamps: true }
 );
+
+// Pre-save hook to calculate wound limits based on attributes
+CharacterSchema.pre("save", function (next) {
+  this.wounds.Damage.limit = this.attributes.Strength.value;
+  this.wounds.Fatigue.limit = this.attributes.Agility.value;
+  this.wounds.Confusion.limit = this.attributes.Wits.value;
+  this.wounds.Doubt.limit = this.attributes.Empathy.value;
+  next();
+});
 
 const Character = mongoose.model<ICharacter>("Character", CharacterSchema);
 
