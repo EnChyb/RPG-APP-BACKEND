@@ -1,3 +1,4 @@
+import User from "../../models/User.js";
 import { RequestHandler } from "express";
 import Character from "../../models/Character.js";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
