@@ -3,16 +3,10 @@ import morgan from "morgan";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-
-// import passport from "./middleware/passportConfig.js";
+import { setupSwagger } from "./config/swagger.js"; // Import Swaggera
 
 import authRouter from "./routes/authRoutes.js";
 import characterRoutes from "./routes/characterRoutes.js";
-// import userRouter from "./routes/api/user.js";
-
-// import authenticateToken from "./middleware/authenticateToken.js";
-
-// import "./middleware/googlePassportConfig.js";
 
 const app = express();
 
@@ -33,14 +27,12 @@ const __dirname = path.dirname(__filename);
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-// app.use(passport.initialize());
 
-// ROUTING
+setupSwagger(app); // 🔥 Dodaj Swaggera tutaj
+
 app.use("/api/auth", authRouter);
 app.use("/api/characters", characterRoutes);
-// app.use("/user", authenticateToken, userRouter);
 
-// MIDDLEWARE - ERRORS
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: "Not found" });
 });
