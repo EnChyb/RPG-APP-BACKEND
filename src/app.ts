@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 // import passport from "./middleware/passportConfig.js";
 
 import authRouter from "./routes/authRoutes.js";
+import characterRoutes from "./routes/characterRoutes.js";
 // import userRouter from "./routes/api/user.js";
 
 // import authenticateToken from "./middleware/authenticateToken.js";
@@ -36,6 +37,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // ROUTING
 app.use("/api/auth", authRouter);
+app.use("/api/characters", characterRoutes);
 // app.use("/user", authenticateToken, userRouter);
 
 // MIDDLEWARE - ERRORS
