@@ -59,8 +59,13 @@ export interface ICharacter extends Document {
   };
   skills: Record<string, ISkill>;
   additionalSkills: ISkill[];
-  talents?: ITalent[];
-  items?: IItem[];
+  talents: ITalent[]; // Zawsze pusta tablica na start
+  items: {
+    Weapons: IItem[];
+    Armor: IItem[];
+    Gears: IItem[];
+  };
+  GameMaster: string; // Nowe pole, domyślnie pusty string
   owner: mongoose.Types.ObjectId;
 }
 
@@ -147,21 +152,51 @@ const CharacterSchema = new Schema<ICharacter>(
         },
       },
     ],
-    talents: [{ id: String, name: String, description: String }],
-    items: [
-      {
-        id: String,
-        name: String,
-        type: { type: String, enum: ["Weapon", "Armor", "Gear"] },
-        description: String,
+    talents: {
+      type: [{ id: String, name: String, description: String }],
+      default: [],
+    },
+    items: {
+      Weapons: {
+        type: [
+          {
+            id: String,
+            name: String,
+            type: { type: String, enum: ["Weapon"] },
+            description: String,
+          },
+        ],
+        default: [],
       },
-    ],
+      Armor: {
+        type: [
+          {
+            id: String,
+            name: String,
+            type: { type: String, enum: ["Armor"] },
+            description: String,
+          },
+        ],
+        default: [],
+      },
+      Gears: {
+        type: [
+          {
+            id: String,
+            name: String,
+            type: { type: String, enum: ["Gear"] },
+            description: String,
+          },
+        ],
+        default: [],
+      },
+    },
+    GameMaster: { type: String, default: "" },
     owner: { type: Schema.Types.ObjectId, ref: "User", required: true },
   },
   { timestamps: true }
 );
 
-// Pre-save hook to calculate wound limits based on attributes
 CharacterSchema.pre("save", function (next) {
   this.wounds.Damage.limit = this.attributes.Strength.value;
   this.wounds.Fatigue.limit = this.attributes.Agility.value;
@@ -171,5 +206,4 @@ CharacterSchema.pre("save", function (next) {
 });
 
 const Character = mongoose.model<ICharacter>("Character", CharacterSchema);
-
 export default Character;

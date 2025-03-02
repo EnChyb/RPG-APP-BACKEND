@@ -26,7 +26,6 @@ export const createCharacter: RequestHandler = async (
       Heal: "Empathy",
     };
 
-    if (!req.body.RPGSystem) req.body.RPGSystem = "Year Zero Engine";
     if (!req.body.skills) {
       res
         .status(400)
@@ -46,24 +45,51 @@ export const createCharacter: RequestHandler = async (
       req.body.skills[skill].displayName = skill;
     }
 
+    // Automatyczne wyliczanie limitów obrażeń na podstawie atrybutów
     const { Strength, Agility, Wits, Empathy } = req.body.attributes;
-    req.body.wounds = {
+    const wounds = {
       Damage: { limit: Strength.value, current: 0, displayName: "Damage" },
       Fatigue: { limit: Agility.value, current: 0, displayName: "Fatigue" },
       Confusion: { limit: Wits.value, current: 0, displayName: "Confusion" },
       Doubt: { limit: Empathy.value, current: 0, displayName: "Doubt" },
     };
 
-    req.body.states = {
+    // Automatyczne ustawienie States na false
+    const states = {
       Hungry: false,
       Sleepy: false,
       Thirsty: false,
       Cold: false,
     };
 
-    const character = new Character({ ...req.body, owner: req.user?.id });
-    await character.save();
-    res.status(201).json({ message: "Character created", character });
+    // Jeśli talents nie jest podane, ustaw pustą tablicę
+    const talents =
+      req.body.talents && Array.isArray(req.body.talents)
+        ? req.body.talents
+        : [];
+
+    // Jeśli items nie jest podane, ustaw domyślne puste sekcje
+    const items = {
+      Weapons: req.body.items?.Weapons ?? [],
+      Armor: req.body.items?.Armor ?? [],
+      Gears: req.body.items?.Gears ?? [],
+    };
+
+    const newCharacter = new Character({
+      ...req.body,
+      owner: req.user?.id,
+      willpower: { value: 0, displayName: "Willpower" }, // Automatycznie ustawiona wartość
+      wounds, // Automatycznie obliczone wounds
+      states, // Automatycznie ustawione states
+      talents, // Jeśli podano, zapisuje się, jeśli nie, pozostaje puste
+      items, // Jeśli podano, zapisuje się, jeśli nie, pozostaje puste
+      GameMaster: "",
+    });
+
+    await newCharacter.save();
+    res
+      .status(201)
+      .json({ message: "Character created", character: newCharacter });
   } catch (error) {
     next(error);
   }
