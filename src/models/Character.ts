@@ -32,12 +32,12 @@ interface IItem {
 
 export interface ICharacter extends Document {
   name: string;
-  age: "Młody" | "Dorosły" | "Stary";
+  age: "Young" | "Adult" | "Old";
   archetype: string;
   race: string;
   RPGSystem: string;
-  appearance?: string;
-  bigDream?: string;
+  appearance: string;
+  bigDream: string;
   willpower: { value: number; displayName: string };
   attributes: {
     Strength: IAttribute;
@@ -67,7 +67,7 @@ export interface ICharacter extends Document {
 const CharacterSchema = new Schema<ICharacter>(
   {
     name: { type: String, required: true },
-    age: { type: String, enum: ["Młody", "Dorosły", "Stary"], required: true },
+    age: { type: String, enum: ["Young", "Adult", "Old"], required: true },
     archetype: { type: String, required: true },
     race: { type: String, required: true },
     RPGSystem: { type: String, default: "Year Zero Engine", required: true },

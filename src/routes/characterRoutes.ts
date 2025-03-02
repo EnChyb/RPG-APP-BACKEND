@@ -5,7 +5,7 @@ import {
   updateCharacter,
   deleteCharacter,
   getAllCharacters,
-} from "../controllers/Character/CharacterController.js";
+} from "../controllers/Character/index.js";
 import protect from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
