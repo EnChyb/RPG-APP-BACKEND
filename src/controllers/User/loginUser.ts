@@ -1,38 +1,9 @@
 import { RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import User from "../models/User.js";
+import User from "../../models/User.js";
 
-export const register: RequestHandler = async (req, res): Promise<void> => {
-  try {
-    const { firstName, lastName, email, password, role } = req.body;
-
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      res.status(409).json({ message: "Email already in use" });
-      return;
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await User.create({
-      firstName,
-      lastName,
-      email,
-      password: hashedPassword,
-      role,
-    });
-
-    res.status(201).json({ message: "User registered successfully", user });
-  } catch (error) {
-    console.error("Error in register:", error);
-    res.status(500).json({
-      message: "Server error",
-      error: error instanceof Error ? error.message : error,
-    });
-  }
-};
-
-export const login: RequestHandler = async (req, res): Promise<void> => {
+const login: RequestHandler = async (req, res): Promise<void> => {
   try {
     const { email, password } = req.body;
 
@@ -54,13 +25,18 @@ export const login: RequestHandler = async (req, res): Promise<void> => {
       expiresIn: "1d",
     });
 
+    user.token = token;
+    await user.save();
+
     res.json({
-      token,
       user: {
+        userId: user.id,
         firstName: user.firstName,
         lastName: user.lastName,
         email,
         role: user.role,
+        avatar: user.avatar,
+        token: token,
       },
     });
   } catch (error) {
@@ -71,3 +47,5 @@ export const login: RequestHandler = async (req, res): Promise<void> => {
     });
   }
 };
+
+export default login;
