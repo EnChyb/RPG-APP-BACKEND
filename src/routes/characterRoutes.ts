@@ -32,78 +32,94 @@ const router = express.Router();
  *       properties:
  *         name:
  *           type: string
- *           example: "Thaliana"
+ *           example: "Bjorn"
  *         age:
  *           type: string
- *           enum: [Młody, Dorosły, Stary]
- *           example: "Dorosły"
+ *           enum: ["Young", "Adult", "Old"]
+ *           example: "Adult"
  *         archetype:
  *           type: string
  *           example: "Warrior"
  *         race:
  *           type: string
- *           example: "Elf"
+ *           example: "Human"
  *         RPGSystem:
  *           type: string
  *           example: "Year Zero Engine"
+ *         appearance:
+ *           type: string
+ *           example: "A burly, tall man with long red hair and a thick beard."
+ *         bigDream:
+ *           type: string
+ *           example: "To become the greatest warrior in history."
  *         attributes:
  *           type: object
  *           properties:
- *             Strength: { type: object, properties: { value: { type: number, example: 4 } } }
- *             Agility: { type: object, properties: { value: { type: number, example: 5 } } }
- *             Wits: { type: object, properties: { value: { type: number, example: 3 } } }
- *             Empathy: { type: object, properties: { value: { type: number, example: 2 } } }
+ *             Strength: { type: object, properties: { value: { type: number, example: 5 } } }
+ *             Agility: { type: object, properties: { value: { type: number, example: 3 } } }
+ *             Wits: { type: object, properties: { value: { type: number, example: 2 } } }
+ *             Empathy: { type: object, properties: { value: { type: number, example: 1 } } }
  *         skills:
  *           type: object
  *           properties:
- *             Craft: { type: object, properties: { value: { type: number, example: 2 } } }
- *             Endure: { type: object, properties: { value: { type: number, example: 4 } } }
- *             Fight: { type: object, properties: { value: { type: number, example: 5 } } }
- *             Sneak: { type: object, properties: { value: { type: number, example: 3 } } }
- *             Move: { type: object, properties: { value: { type: number, example: 2 } } }
- *             Shoot: { type: object, properties: { value: { type: number, example: 4 } } }
- *             Scout: { type: object, properties: { value: { type: number, example: 1 } } }
- *             Comprehend: { type: object, properties: { value: { type: number, example: 3 } } }
- *             Survive: { type: object, properties: { value: { type: number, example: 2 } } }
- *             Manipulate: { type: object, properties: { value: { type: number, example: 3 } } }
- *             SenseEmotion: { type: object, properties: { value: { type: number, example: 2 } } }
- *             Heal: { type: object, properties: { value: { type: number, example: 1 } } }
- *         bigDream:
- *           type: string
- *           example: "Zostać największym wojownikiem królestwa."
- *           description: "Opcjonalne - Marzenie bohatera."
- *         appearance:
- *           type: string
- *           example: "Wysoki elf o srebrnych włosach i bliznach po bitwach."
- *           description: "Opcjonalne - Opis wyglądu."
+ *             Craft: { type: object, properties: { value: { type: number, example: 0 }, linkedAttribute: { type: string, example: "Strength" } } }
+ *             Endure: { type: object, properties: { value: { type: number, example: 4 }, linkedAttribute: { type: string, example: "Strength" } } }
+ *             Fight: { type: object, properties: { value: { type: number, example: 5 }, linkedAttribute: { type: string, example: "Strength" } } }
+ *             Sneak: { type: object, properties: { value: { type: number, example: 0 }, linkedAttribute: { type: string, example: "Agility" } } }
+ *             Move: { type: object, properties: { value: { type: number, example: 3 }, linkedAttribute: { type: string, example: "Agility" } } }
+ *             Shoot: { type: object, properties: { value: { type: number, example: 2 }, linkedAttribute: { type: string, example: "Agility" } } }
+ *             Scout: { type: object, properties: { value: { type: number, example: 2 }, linkedAttribute: { type: string, example: "Wits" } } }
+ *             Comprehend: { type: object, properties: { value: { type: number, example: 2 }, linkedAttribute: { type: string, example: "Wits" } } }
+ *             Survive: { type: object, properties: { value: { type: number, example: 3 }, linkedAttribute: { type: string, example: "Wits" } } }
+ *             Manipulate: { type: object, properties: { value: { type: number, example: 1 }, linkedAttribute: { type: string, example: "Empathy" } } }
+ *             SenseEmotion: { type: object, properties: { value: { type: number, example: 2 }, linkedAttribute: { type: string, example: "Empathy" } } }
+ *             Heal: { type: object, properties: { value: { type: number, example: 1 }, linkedAttribute: { type: string, example: "Empathy" } } }
  *         additionalSkills:
  *           type: array
- *           description: "Opcjonalne - Dodatkowe umiejętności, które bohater nabył."
  *           items:
  *             type: object
  *             properties:
- *               displayName: { type: string, example: "Alchemy" }
- *               value: { type: number, example: 3 }
- *               linkedAttribute: { type: string, enum: ["Strength", "Agility", "Wits", "Empathy"], example: "Wits" }
+ *               displayName: { type: string, example: "Music" }
+ *               value: { type: number, example: 1 }
+ *               linkedAttribute: { type: string, example: "Empathy" }
  *         talents:
  *           type: array
- *           description: "Opcjonalne - Lista talentów bohatera."
  *           items:
  *             type: object
  *             properties:
  *               id: { type: string, example: "talent-1" }
- *               name: { type: string, example: "Master Tactician" }
- *               description: { type: string, example: "Bohater potrafi przewidywać ruchy wroga." }
+ *               name: { type: string, example: "Berserker" }
+ *               description: { type: string, example: "Entering a battle rage grants additional damage." }
  *         items:
- *           type: array
- *           description: "Opcjonalne - Przedmioty posiadane przez bohatera."
- *           items:
- *             type: object
- *             properties:
- *               id: { type: string, example: "item-1" }
- *               name: { type: string, example: "Magic Sword" }
- *               type: { type: string, enum: ["Weapon", "Armor", "Gear"], example: "Weapon" }
- *               description: { type: string, example: "Miecz wykuty przez elfickich kowali." }
+ *           type: object
+ *           properties:
+ *             Weapons:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id: { type: string, example: "item-1" }
+ *                   name: { type: string, example: "Great Axe" }
+ *                   type: { type: string, example: "Weapon" }
+ *                   description: { type: string, example: "A massive battle axe with a two-handed blade." }
+ *             Armor:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id: { type: string, example: "item-2" }
+ *                   name: { type: string, example: "Light Armor" }
+ *                   type: { type: string, example: "Armor" }
+ *                   description: { type: string, example: "Leather armor providing protection against light attacks." }
+ *             Gears:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id: { type: string, example: "item-3" }
+ *                   name: { type: string, example: "War Horn" }
+ *                   type: { type: string, example: "Gear" }
+ *                   description: { type: string, example: "A powerful horn used for signaling and intimidating enemies." }
  */
 
 /**
@@ -130,120 +146,9 @@ const router = express.Router();
  */
 router.post("/", protect, createCharacter);
 
-/**
- * @swagger
- * /characters:
- *   get:
- *     summary: Get all characters for the authenticated user
- *     tags: [Characters]
- *     security:
- *       - BearerAuth: []
- *     responses:
- *       200:
- *         description: List of characters
- *       401:
- *         description: Unauthorized
- */
 router.get("/", protect, getAllCharacters);
-
-/**
- * @swagger
- * /characters/{id}:
- *   get:
- *     summary: Get a character by ID
- *     tags: [Characters]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         example: "65f3c0d9c5d6e521b0d3a8f6"
- *     responses:
- *       200:
- *         description: Successfully retrieved character
- *       404:
- *         description: Character not found
- */
 router.get("/:id", protect, getCharacter);
-
-/**
- * @swagger
- * /characters/{id}:
- *   patch:
- *     summary: Update a character
- *     tags: [Characters]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         example: "65f3c0d9c5d6e521b0d3a8f6"
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               skills:
- *                 type: object
- *                 properties:
- *                   Fight:
- *                     type: object
- *                     properties:
- *                       value:
- *                         type: number
- *                         example: 6
- *               wounds:
- *                 type: object
- *                 properties:
- *                   Damage:
- *                     type: object
- *                     properties:
- *                       current:
- *                         type: number
- *                         example: 2
- *     responses:
- *       200:
- *         description: Successfully updated character
- *       400:
- *         description: Invalid request
- *       404:
- *         description: Character not found
- */
 router.patch("/:id", protect, updateCharacter);
-
-/**
- * @swagger
- * /characters/{id}:
- *   delete:
- *     summary: Delete a character
- *     tags: [Characters]
- *     security:
- *       - BearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *         example: "65f3c0d9c5d6e521b0d3a8f6"
- *     responses:
- *       200:
- *         description: Successfully deleted character
- *       403:
- *         description: Forbidden
- *       404:
- *         description: Character not found
- */
 router.delete("/:id", protect, deleteCharacter);
-
-router.get("/", protect, getAllCharacters);
 
 export default router;
