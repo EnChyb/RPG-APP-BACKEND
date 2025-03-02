@@ -6,7 +6,6 @@ interface IAttribute {
 }
 
 interface IWound {
-  limit: number;
   current: number;
   displayName: string;
 }
@@ -59,13 +58,13 @@ export interface ICharacter extends Document {
   };
   skills: Record<string, ISkill>;
   additionalSkills: ISkill[];
-  talents: ITalent[]; // Zawsze pusta tablica na start
+  talents: ITalent[];
   items: {
     Weapons: IItem[];
     Armor: IItem[];
     Gears: IItem[];
   };
-  GameMaster: string; // Nowe pole, domyślnie pusty string
+  GameMaster: string;
   owner: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
@@ -101,22 +100,18 @@ const CharacterSchema = new Schema<ICharacter>(
     },
     wounds: {
       Damage: {
-        limit: { type: Number, required: true },
         current: { type: Number, default: 0 },
         displayName: { type: String, default: "Damage" },
       },
       Fatigue: {
-        limit: { type: Number, required: true },
         current: { type: Number, default: 0 },
         displayName: { type: String, default: "Fatigue" },
       },
       Confusion: {
-        limit: { type: Number, required: true },
         current: { type: Number, default: 0 },
         displayName: { type: String, default: "Confusion" },
       },
       Doubt: {
-        limit: { type: Number, required: true },
         current: { type: Number, default: 0 },
         displayName: { type: String, default: "Doubt" },
       },
@@ -198,14 +193,6 @@ const CharacterSchema = new Schema<ICharacter>(
   },
   { timestamps: true }
 );
-
-CharacterSchema.pre("save", function (next) {
-  this.wounds.Damage.limit = this.attributes.Strength.value;
-  this.wounds.Fatigue.limit = this.attributes.Agility.value;
-  this.wounds.Confusion.limit = this.attributes.Wits.value;
-  this.wounds.Doubt.limit = this.attributes.Empathy.value;
-  next();
-});
 
 const Character = mongoose.model<ICharacter>("Character", CharacterSchema);
 export default Character;

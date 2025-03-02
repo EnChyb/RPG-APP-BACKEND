@@ -48,10 +48,10 @@ export const createCharacter: RequestHandler = async (
     // Automatyczne wyliczanie limitów obrażeń na podstawie atrybutów
     const { Strength, Agility, Wits, Empathy } = req.body.attributes;
     const wounds = {
-      Damage: { limit: Strength.value, current: 0, displayName: "Damage" },
-      Fatigue: { limit: Agility.value, current: 0, displayName: "Fatigue" },
-      Confusion: { limit: Wits.value, current: 0, displayName: "Confusion" },
-      Doubt: { limit: Empathy.value, current: 0, displayName: "Doubt" },
+      Damage: { current: 0, displayName: "Damage" },
+      Fatigue: { current: 0, displayName: "Fatigue" },
+      Confusion: { current: 0, displayName: "Confusion" },
+      Doubt: { current: 0, displayName: "Doubt" },
     };
 
     // Automatyczne ustawienie States na false
