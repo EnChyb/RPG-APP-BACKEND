@@ -146,9 +146,110 @@ const router = express.Router();
  */
 router.post("/", protect, createCharacter);
 
+/**
+ * @swagger
+ * /characters:
+ *   get:
+ *     summary: Get all characters for the authenticated user
+ *     tags: [Characters]
+ *     security:
+ *       - BearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved characters
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: No characters found for this user
+ */
 router.get("/", protect, getAllCharacters);
+
+/**
+ * @swagger
+ * /characters/{id}:
+ *   get:
+ *     summary: Get a specific character by ID
+ *     tags: [Characters]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the character to retrieve
+ *     responses:
+ *       200:
+ *         description: Successfully retrieved the character
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Character not found
+ */
 router.get("/:id", protect, getCharacter);
+
+/**
+ * @swagger
+ * /characters/{id}:
+ *   patch:
+ *     summary: Update an existing character
+ *     tags: [Characters]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the character to update
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             description: The fields to update
+ *     responses:
+ *       200:
+ *         description: Character updated successfully
+ *       400:
+ *         description: Invalid update fields or missing data
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - not allowed to update this character
+ *       404:
+ *         description: Character not found
+ */
 router.patch("/:id", protect, updateCharacter);
+
+/**
+ * @swagger
+ * /characters/{id}:
+ *   delete:
+ *     summary: Delete a character
+ *     tags: [Characters]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the character to delete
+ *     responses:
+ *       200:
+ *         description: Character deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - not allowed to delete this character
+ *       404:
+ *         description: Character not found
+ */
 router.delete("/:id", protect, deleteCharacter);
 
 export default router;
