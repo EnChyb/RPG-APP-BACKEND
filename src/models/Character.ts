@@ -67,6 +67,8 @@ export interface ICharacter extends Document {
   };
   GameMaster: string; // Nowe pole, domyślnie pusty string
   owner: mongoose.Types.ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const CharacterSchema = new Schema<ICharacter>(
