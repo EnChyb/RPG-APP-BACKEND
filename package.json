@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "start": "ts-node index.ts",
-    "dev": "nodemon --watch src/**/*.ts --exec node --loader ts-node/esm src/index.ts"
+    "dev": "node -e \"require('cross-spawn')('nodemon', ['--watch', 'src/**/*.ts', '--exec', 'node --loader ts-node/esm', 'src/index.ts'], { stdio: 'inherit' })\""
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
