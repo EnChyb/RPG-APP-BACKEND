@@ -17,7 +17,7 @@ const UserSchema = new mongoose.Schema(
     email: { type: String, unique: true },
     password: String,
     role: { type: String, enum: ["gm", "player"], default: "player" },
-    avatar: { type: String, default: "https://www.gravatar.com/avatar/" },
+    avatar: { type: String, default: "../assets/img/avatar-placeholder.png" },
     token: { type: String, default: null },
   },
   { timestamps: true }

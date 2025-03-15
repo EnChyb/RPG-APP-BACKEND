@@ -2,12 +2,18 @@ import { RequestHandler } from "express";
 import Character from "../../models/Character.js";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
 
+const DEFAULT_AVATAR = "../../assets/img/avatar-placeholder.png";
+
 export const createCharacter: RequestHandler = async (
   req: AuthenticatedRequest,
   res,
   next
 ): Promise<void> => {
   try {
+    const avatar = req.file
+      ? `/uploads/avatars/${req.file.filename}`
+      : DEFAULT_AVATAR;
+
     const skillToAttributeMap: Record<
       string,
       "Strength" | "Agility" | "Wits" | "Empathy"
@@ -78,6 +84,7 @@ export const createCharacter: RequestHandler = async (
     const newCharacter = new Character({
       ...req.body,
       owner: req.user?.id,
+      avatar,
       willpower: { value: 0, displayName: "Willpower" }, // Automatycznie ustawiona wartość
       wounds, // Automatycznie obliczone wounds
       states, // Automatycznie ustawione states
