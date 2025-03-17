@@ -2,7 +2,7 @@ import { RequestHandler } from "express";
 import bcrypt from "bcryptjs";
 import User from "../../models/User.js";
 
-const DEFAULT_AVATAR = "https://www.gravatar.com/avatar/";
+const DEFAULT_AVATAR = "../../assets/img/avatar-placeholder.png";
 
 const register: RequestHandler = async (req, res): Promise<void> => {
   try {
