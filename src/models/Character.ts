@@ -20,6 +20,9 @@ interface ITalent {
   id: string;
   name: string;
   description: string;
+  bonus: "+1" | "+2";
+  level: "1" | "2" | "3";
+  talentType: "Active" | "Passive" | "Situational";
 }
 
 interface IItem {
@@ -30,12 +33,14 @@ interface IItem {
 }
 
 export interface ICharacter extends Document {
+  avatar: string;
   name: string;
   age: "Young" | "Adult" | "Old";
   archetype: string;
   race: string;
   RPGSystem: string;
   appearance: string;
+  history: string;
   bigDream: string;
   willpower: { value: number; displayName: string };
   attributes: {
@@ -72,12 +77,14 @@ export interface ICharacter extends Document {
 
 const CharacterSchema = new Schema<ICharacter>(
   {
+    avatar: { type: String, default: "../assets/img/avatar-placeholder.png" },
     name: { type: String, required: true },
     age: { type: String, enum: ["Young", "Adult", "Old"], required: true },
     archetype: { type: String, required: true },
     race: { type: String, required: true },
     RPGSystem: { type: String, default: "Year Zero Engine", required: true },
     appearance: { type: String, required: false },
+    history: { type: String, required: false },
     bigDream: { type: String, required: false },
     willpower: {
       value: { type: Number, default: 0 },
@@ -150,7 +157,12 @@ const CharacterSchema = new Schema<ICharacter>(
       },
     ],
     talents: {
-      type: [{ id: String, name: String, description: String }],
+      id: { type: String },
+      name: { type: String },
+      descripption: { type: String },
+      bonus: { type: String, enum: ["+1", "+2"] },
+      level: { type: String, enum: ["1", "2", "3"] },
+      talentType: { type: String, enum: ["Active", "Passive", "Situational"] },
       default: [],
     },
     items: {
