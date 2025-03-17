@@ -15,7 +15,11 @@ const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 app.use(morgan(formatsLogger));
 
 const corsOptions = {
-  origin: ["http://localhost:5173", "http://localhost:3000"],
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:8081",
+    "http://localhost:3000",
+  ],
   methods: ["GET", "POST", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization", "Location"],
   credentials: true,
