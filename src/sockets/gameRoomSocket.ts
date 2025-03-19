@@ -49,12 +49,22 @@ export function initGameRoomSocket(server: any) {
                 return;
             }
 
+            const userData = {
+                userId: socket.data.user._id.toString(),
+                firstName: socket.data.user.firstName,
+                lastName: socket.data.user.lastName,
+                email: socket.data.user.email,
+                avatar: socket.data.user.avatar,
+                role: socket.data.user.role
+            };
+
             if (isGM) {
                 // GM tworzy pokój – zapisujemy socket.id dla danego pokoju
                 roomGMs.set(roomCode, socket.id);
                 socket.join(roomCode);
                 console.log(`GM (user ${userId}) created a room ${roomCode}`);
                 socket.emit("room_created", { roomCode });
+                socket.to(roomCode).emit("user_joined", userData);
             } else {
                 // Gracz próbuje dołączyć – najpierw sprawdzamy, czy pokój istnieje
                 if (!roomGMs.has(roomCode)) {
@@ -65,7 +75,7 @@ export function initGameRoomSocket(server: any) {
                 console.log(`Player ${userId} joined the room ${roomCode}`);
                 socket.emit("room_joined", { roomCode });
                 // Informujemy innych uczestników pokoju
-                socket.to(roomCode).emit("user_joined", { userId, characterId });
+                socket.to(roomCode).emit("user_joined", userData);
             }
         });
 
