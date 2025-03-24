@@ -70,10 +70,11 @@ export function initGameRoomSocket(server: any) {
                 role: socket.data.user.role
             };
 
+            socket.join(roomCode);
+
             if (isGM) {
                 // GM tworzy pokój – zapisujemy socket.id dla danego pokoju
                 roomGMs.set(roomCode, socket.id);
-                socket.join(roomCode);
                 console.log(`GM (user ${userId}) created a room ${roomCode}`);
                 socket.emit("room_created", { roomCode, userData });
                 socket.to(roomCode).emit("user_joined", userData);
@@ -83,12 +84,24 @@ export function initGameRoomSocket(server: any) {
                     socket.emit("error", { message: "Room does not exist or GM is not connected" });
                     return;
                 }
-                socket.join(roomCode);
                 console.log(`Player ${userId} joined the room ${roomCode}`);
                 socket.emit("room_joined", { roomCode, userData });
-                // Informujemy innych uczestników pokoju
                 socket.to(roomCode).emit("user_joined", userData);
             }
+            // Pobieramy listę socketów w pokoju i wysyłamy aktualizację
+            const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
+            const usersList = clients.map(clientId => {
+                const clientSocket = io.sockets.sockets.get(clientId);
+                return {
+                    id: clientSocket?.data.user._id.toString() || "",
+                    firstName: clientSocket?.data.user.firstName,
+                    lastName: clientSocket?.data.user.lastName,
+                    email: clientSocket?.data.user.email,
+                    avatar: clientSocket?.data.user.avatar,
+                    role: clientSocket?.data.user.role,
+                };
+            });
+            io.to(roomCode).emit("update_room_users", { users: usersList });
         });
 
         // Nowy handler do obsługi wiadomości czatu
@@ -98,7 +111,7 @@ export function initGameRoomSocket(server: any) {
                 socket.emit("error", { message: "Authorization error: UserId does not match" });
                 return;
             }
-            // Możesz uzupełnić id wiadomości tutaj, jeśli potrzebujesz
+            // Mona uzupełnić id wiadomości tutaj.
             const messageData = { ...data, id: data.id || Math.random().toString(36).slice(2, 9) };
             console.log(`User ${userId} sent message in room ${roomCode}: ${message}`);
             // Rozsyłamy wiadomość do wszystkich uczestników pokoju
@@ -142,6 +155,23 @@ export function initGameRoomSocket(server: any) {
                     io.to(room).emit("gm_disconnected", { message: "GM disconnected" });
                 }
             }
+             // Aktualizacja listy użytkowników dla wszystkich pokoi, do których należał socket
+            socket.rooms.forEach((room) => {
+                if (room === socket.id) return;
+                const clients = Array.from(io.sockets.adapter.rooms.get(room) || []);
+                const usersList = clients.map(clientId => {
+                    const clientSocket = io.sockets.sockets.get(clientId);
+                    return {
+                        id: clientSocket?.data.user._id.toString() || "",
+                        firstName: clientSocket?.data.user.firstName,
+                        lastName: clientSocket?.data.user.lastName,
+                        email: clientSocket?.data.user.email,
+                        avatar: clientSocket?.data.user.avatar,
+                        role: clientSocket?.data.user.role,
+                    };
+                });
+                io.to(room).emit("update_room_users", { users: usersList });
+            });
         });
     });
 
