@@ -7,6 +7,11 @@ interface JoinRoomData {
     userId: string;
     characterId?: string;
     isGM?: boolean;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    avatar?: string;
+    role?: string;
 }
 
 interface RollDiceData {
@@ -14,6 +19,13 @@ interface RollDiceData {
     dice: string; // np. "d6", "d20"
     hidden?: boolean;
     userId: string;
+}
+
+interface ChatMessageData {
+    roomCode: string;
+    userId: string;
+    message: string;
+    id?: string;
 }
 
 export function initGameRoomSocket(server: any) {
@@ -63,7 +75,7 @@ export function initGameRoomSocket(server: any) {
                 roomGMs.set(roomCode, socket.id);
                 socket.join(roomCode);
                 console.log(`GM (user ${userId}) created a room ${roomCode}`);
-                socket.emit("room_created", { roomCode });
+                socket.emit("room_created", { roomCode, userData });
                 socket.to(roomCode).emit("user_joined", userData);
             } else {
                 // Gracz próbuje dołączyć – najpierw sprawdzamy, czy pokój istnieje
@@ -73,10 +85,24 @@ export function initGameRoomSocket(server: any) {
                 }
                 socket.join(roomCode);
                 console.log(`Player ${userId} joined the room ${roomCode}`);
-                socket.emit("room_joined", { roomCode });
+                socket.emit("room_joined", { roomCode, userData });
                 // Informujemy innych uczestników pokoju
                 socket.to(roomCode).emit("user_joined", userData);
             }
+        });
+
+        // Nowy handler do obsługi wiadomości czatu
+        socket.on("chat_message", (data: ChatMessageData) => {
+            const { roomCode, userId, message } = data;
+            if (socket.data.user._id.toString() !== userId) {
+                socket.emit("error", { message: "Authorization error: UserId does not match" });
+                return;
+            }
+            // Możesz uzupełnić id wiadomości tutaj, jeśli potrzebujesz
+            const messageData = { ...data, id: data.id || Math.random().toString(36).slice(2, 9) };
+            console.log(`User ${userId} sent message in room ${roomCode}: ${message}`);
+            // Rozsyłamy wiadomość do wszystkich uczestników pokoju
+            io.to(roomCode).emit("chat_message", messageData);
         });
 
         socket.on("roll_dice", (data: RollDiceData) => {
