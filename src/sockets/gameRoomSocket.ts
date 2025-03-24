@@ -77,7 +77,7 @@ export function initGameRoomSocket(server: any) {
                 roomGMs.set(roomCode, socket.id);
                 console.log(`GM (user ${userId}) created a room ${roomCode}`);
                 socket.emit("room_created", { roomCode, userData });
-                socket.to(roomCode).emit("user_joined", userData);
+                // socket.to(roomCode).emit("user_joined", userData);
             } else {
                 // Gracz próbuje dołączyć – najpierw sprawdzamy, czy pokój istnieje
                 if (!roomGMs.has(roomCode)) {
@@ -86,22 +86,24 @@ export function initGameRoomSocket(server: any) {
                 }
                 console.log(`Player ${userId} joined the room ${roomCode}`);
                 socket.emit("room_joined", { roomCode, userData });
-                socket.to(roomCode).emit("user_joined", userData);
+                // socket.to(roomCode).emit("user_joined", userData);
             }
             // Pobieramy listę socketów w pokoju i wysyłamy aktualizację
-            const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
-            const usersList = clients.map(clientId => {
-                const clientSocket = io.sockets.sockets.get(clientId);
-                return {
-                    id: clientSocket?.data.user._id.toString() || "",
-                    firstName: clientSocket?.data.user.firstName,
-                    lastName: clientSocket?.data.user.lastName,
-                    email: clientSocket?.data.user.email,
-                    avatar: clientSocket?.data.user.avatar,
-                    role: clientSocket?.data.user.role,
-                };
-            });
-            io.to(roomCode).emit("update_room_users", { users: usersList });
+            setTimeout(() => {
+                const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
+                const usersList = clients.map(clientId => {
+                    const clientSocket = io.sockets.sockets.get(clientId);
+                    return {
+                        id: clientSocket?.data.user._id.toString() || "",
+                        firstName: clientSocket?.data.user.firstName,
+                        lastName: clientSocket?.data.user.lastName,
+                        email: clientSocket?.data.user.email,
+                        avatar: clientSocket?.data.user.avatar,
+                        role: clientSocket?.data.user.role,
+                    };
+                });
+                io.to(roomCode).emit("update_room_users", { users: usersList });
+            }, 100);
         });
 
         // Nowy handler do obsługi wiadomości czatu
