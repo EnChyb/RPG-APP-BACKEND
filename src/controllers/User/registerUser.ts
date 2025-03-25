@@ -6,11 +6,11 @@ const DEFAULT_AVATAR = "../../assets/img/avatar-placeholder.png";
 
 const register: RequestHandler = async (req, res): Promise<void> => {
   try {
-    const { firstName, lastName, email, password, role } = req.body;
-    const avatar = req.file
-      ? `/uploads/avatars/${req.file.filename}`
-      : DEFAULT_AVATAR;
-
+    const { firstName, lastName, email, password, role, avatar } = req.body;
+    console.log("avatar 1:", avatar);
+    // Jeśli avatar nie został przesłany, ustaw domyślny avatar
+    const userAvatar = avatar || DEFAULT_AVATAR;
+    console.log("avatar 2:", userAvatar);
     const userExists = await User.findOne({ email });
     if (userExists) {
       res.status(409).json({ message: "Email already in use" });
@@ -21,11 +21,12 @@ const register: RequestHandler = async (req, res): Promise<void> => {
       firstName,
       lastName,
       email,
+      password: await bcrypt.hash(password, 10),
       role,
-      avatar,
+      avatar: userAvatar, // Avatar ustawiony na domyślny lub przesłany
     });
 
-    newUser.password = await bcrypt.hash(password, 10);
+    // newUser.password = await bcrypt.hash(password, 10);
     await newUser.save();
 
     res.status(201).json({ message: "User registered successfully", newUser });

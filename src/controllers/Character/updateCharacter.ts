@@ -39,6 +39,11 @@ export const updateCharacter: RequestHandler = async (
         return;
       }
     }
+    // Handle update avatar
+    // Ustaw nowy avatar tylko, jeśli został przesłany - sprawdzić czy konieczne, czy wystarczy middleware
+    if (req.body.avatar) {
+      character.avatar = req.body.avatar;
+    }
 
     // ✅ Preserve `displayName` while updating nested fields
     if (updates.attributes) {
@@ -82,6 +87,24 @@ export const updateCharacter: RequestHandler = async (
         Gears: updates.items.Gears || character.items.Gears,
       };
     }
+
+    //ZOSTAWIAM FRAGMENT DO PRZEMYŚLENIA, CZY NIE MOŻNA ZASTĄPIĆ LINIJEK 48-89
+    //TYM FRAGMENTEM KODU:
+    // const updatableFields = [
+    //   "attributes",
+    //   "skills",
+    //   "wounds",
+    //   "states",
+    //   "items",
+    // ];
+    // updatableFields.forEach((field) => {
+    //   if (updates[field]) {
+    //     character[field] = {
+    //       ...character[field],
+    //       ...updates[field],
+    //     };
+    //   }
+    // });
 
     // ✅ Save and return the updated character
     await character.save();

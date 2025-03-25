@@ -1,3 +1,6 @@
 {
-  "ignore": ["node_modules"]
+  "ignore": ["node_modules"],
+  "watch": ["src"],
+  "ext": "ts,json",
+  "exec": "node --loader ts-node/esm --require tsconfig-paths/register src/index.ts"
 }

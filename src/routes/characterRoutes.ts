@@ -7,7 +7,7 @@ import {
   getAllCharacters,
 } from "../controllers/Character/index.js";
 import protect from "../middlewares/authMiddleware.js";
-import upload from "../middlewares/uploadMiddleware.js";
+import { uploadAvatar } from "../middlewares/avatarMiddleware.js";
 
 const router = express.Router();
 
@@ -145,7 +145,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.post("/", protect, upload.single("avatar"), createCharacter);
+router.post("/", protect, uploadAvatar, createCharacter);
 
 /**
  * @swagger
@@ -224,7 +224,7 @@ router.get("/:id", protect, getCharacter);
  *       404:
  *         description: Character not found
  */
-router.patch("/:id", protect, upload.single("avatar"), updateCharacter);
+router.patch("/:id", protect, uploadAvatar, updateCharacter);
 
 /**
  * @swagger

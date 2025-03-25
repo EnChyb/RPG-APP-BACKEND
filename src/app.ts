@@ -1,8 +1,8 @@
 import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
+//import path from "path";
+//import { fileURLToPath } from "url";
 import { setupSwagger } from "./config/swagger.js"; // Import Swaggera
 
 import authRouter from "./routes/authRoutes.js";
@@ -16,7 +16,7 @@ app.use(morgan(formatsLogger));
 
 const corsOptions = {
   origin: [
-    "http://localhost:5173",
+    "http://localhost:5100",
     "http://localhost:8081",
     "http://localhost:3000",
   ],
@@ -25,12 +25,12 @@ const corsOptions = {
   credentials: true,
 };
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
 
 app.use(cors(corsOptions));
 app.use(express.json());
-app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+//app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 setupSwagger(app); // 🔥 Dodaj Swaggera tutaj
 
