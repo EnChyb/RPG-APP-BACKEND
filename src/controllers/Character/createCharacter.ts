@@ -10,10 +10,6 @@ export const createCharacter: RequestHandler = async (
   next
 ): Promise<void> => {
   try {
-    const avatar = req.file
-      ? `/uploads/avatars/${req.file.filename}`
-      : DEFAULT_AVATAR;
-
     const skillToAttributeMap: Record<
       string,
       "Strength" | "Agility" | "Wits" | "Empathy"
@@ -81,10 +77,13 @@ export const createCharacter: RequestHandler = async (
       Gears: req.body.items?.Gears ?? [],
     };
 
+    // Ustaw domyślny avatar, jeśli brak przesłanego
+    const characterAvatar = req.body.avatar || DEFAULT_AVATAR;
+
     const newCharacter = new Character({
       ...req.body,
       owner: req.user?.id,
-      avatar,
+      avatar: characterAvatar, // pobierze avatar z middleware jeśli zostanie załadowany i nie nadpisze avatara usera, tylko przypisze do character,
       willpower: { value: 0, displayName: "Willpower" }, // Automatycznie ustawiona wartość
       wounds, // Automatycznie obliczone wounds
       states, // Automatycznie ustawione states

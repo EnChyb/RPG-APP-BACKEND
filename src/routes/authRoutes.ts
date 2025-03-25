@@ -7,14 +7,14 @@ import {
   logoutUser,
 } from "../controllers/User/index.js";
 import protect from "../middlewares/authMiddleware.js";
-import upload from "../middlewares/uploadMiddleware.js";
+import uploadAvatar from "../middlewares/avatarMiddleware.js";
 
 const router = express.Router();
 
-router.post("/register", upload.single("avatar"), register);
+router.post("/register", uploadAvatar, register);
 router.post("/login", login);
 router.get("/current", protect, getUser);
-router.patch("/update", protect, upload.single("avatar"), updateUser);
+router.patch("/update", protect, uploadAvatar, updateUser);
 router.post("/logout", protect, logoutUser);
 
 export default router;

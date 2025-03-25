@@ -24,11 +24,9 @@ const updateUser = async (
       return;
     }
 
-    const { firstName, lastName, email, password, role } = req.body;
-    const userId = req.user?.id;
-    const avatar = req.file
-      ? `/uploads/avatars/${req.file.filename}`
-      : undefined;
+    const { firstName, lastName, email, password, role, avatar } = req.body;
+    const userId = req.user.id;
+    console.log("req.body:", req.body);
 
     const user = await User.findById(req.user.id);
     if (!user) {
@@ -47,7 +45,7 @@ const updateUser = async (
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
     if (email) user.email = email;
-    if (avatar) user.avatar = avatar;
+    if (avatar) user.avatar = avatar; // Aktualizacja avatara, jeśli przesłano nowy
     if (role) user.role = role;
 
     if (password) {
