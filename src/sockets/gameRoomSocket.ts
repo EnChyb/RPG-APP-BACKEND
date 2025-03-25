@@ -118,6 +118,11 @@ export function initGameRoomSocket(server: any) {
             console.log(`User ${userId} sent message in room ${roomCode}: ${message}`);
             // Rozsyłamy wiadomość do wszystkich uczestników pokoju
             io.to(roomCode).emit("chat_message", messageData);
+
+            // // Wysyłamy wiadomość najpierw do nadawcy...
+            // socket.emit("chat_message", messageData);
+            // // ...a następnie broadcast do pozostałych użytkowników w pokoju
+            // socket.broadcast.to(roomCode).emit("chat_message", messageData);
         });
 
         socket.on("roll_dice", (data: RollDiceData) => {
