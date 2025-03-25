@@ -86,7 +86,7 @@ export function initGameRoomSocket(server: any) {
                 }
                 console.log(`Player ${userId} joined the room ${roomCode}`);
                 socket.emit("room_joined", { roomCode, userData });
-                // socket.to(roomCode).emit("user_joined", userData);
+                socket.to(roomCode).emit("user_joined", userData);
             }
             // Pobieramy listę socketów w pokoju i wysyłamy aktualizację
             setTimeout(() => {
@@ -103,7 +103,7 @@ export function initGameRoomSocket(server: any) {
                     };
                 });
                 io.to(roomCode).emit("update_room_users", { users: usersList });
-            }, 100);
+            }, 500);
         });
 
         // Nowy handler do obsługi wiadomości czatu
