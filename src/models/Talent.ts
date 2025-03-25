@@ -22,4 +22,4 @@ const TalentSchema: Schema = new Schema(
   { strict: false }
 );
 
-export default mongoose.model<ITalent>("Talent", TalentSchema);
+export default mongoose.model<ITalent>("Talent", TalentSchema, "talents");

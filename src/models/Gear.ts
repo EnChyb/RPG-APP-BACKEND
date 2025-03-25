@@ -22,4 +22,4 @@ const GearSchema: Schema = new Schema(
   { strict: false }
 );
 
-export default mongoose.model<IGear>("Gear", GearSchema);
+export default mongoose.model<IGear>("Gear", GearSchema, "gear");

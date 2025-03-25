@@ -24,4 +24,4 @@ const ArmorSchema: Schema = new Schema(
   { strict: false }
 );
 
-export default mongoose.model<IArmor>("Armor", ArmorSchema);
+export default mongoose.model<IArmor>("Armor", ArmorSchema, "armor");

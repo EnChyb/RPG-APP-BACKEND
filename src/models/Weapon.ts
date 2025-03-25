@@ -32,4 +32,4 @@ const WeaponSchema: Schema = new Schema(
   { strict: false }
 );
 
-export default mongoose.model<IWeapon>("Weapon", WeaponSchema);
+export default mongoose.model<IWeapon>("Weapon", WeaponSchema, "weapons");
