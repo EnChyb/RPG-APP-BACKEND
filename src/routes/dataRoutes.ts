@@ -33,12 +33,12 @@ router.get("/armor", async (_req, res) => {
   }
 });
 
-router.get("/gears", async (_req, res) => {
+router.get("/gear", async (_req, res) => {
   try {
     const gears = await Gear.find();
     res.json(gears);
   } catch (err) {
-    res.status(500).json({ message: "Failed to fetch gears", error: err });
+    res.status(500).json({ message: "Failed to fetch gear", error: err });
   }
 });
 

@@ -37,7 +37,7 @@ setupSwagger(app); // 🔥 Dodaj Swaggera tutaj
 
 app.use("/api/auth", authRouter);
 app.use("/api/characters", characterRoutes);
-app.use("/api/data", characterRoutes);
+app.use("/api/data", dataRoutes);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: "Not found" });
