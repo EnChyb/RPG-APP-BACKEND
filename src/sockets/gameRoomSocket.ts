@@ -31,8 +31,12 @@ interface ChatMessageData {
 export function initGameRoomSocket(server: any) {
     const io = new Server(server, {
         cors: {
-            origin: ["http://localhost:8081", "http://localhost:5173", "http://localhost:3000"],
-            methods: ["GET", "POST"],
+            origin: [
+                "http://localhost:5173",
+                "http://localhost:8081",
+                "http://localhost:3000",
+            ],
+            methods: ["GET", "POST", "PATCH", "DELETE"],
         },
     });
 
@@ -118,6 +122,11 @@ export function initGameRoomSocket(server: any) {
             console.log(`User ${userId} sent message in room ${roomCode}: ${message}`);
             // Rozsyłamy wiadomość do wszystkich uczestników pokoju
             io.to(roomCode).emit("chat_message", messageData);
+
+            // // Wysyłamy wiadomość najpierw do nadawcy...
+            // socket.emit("chat_message", messageData);
+            // // ...a następnie broadcast do pozostałych użytkowników w pokoju
+            // socket.broadcast.to(roomCode).emit("chat_message", messageData);
         });
 
         socket.on("roll_dice", (data: RollDiceData) => {
