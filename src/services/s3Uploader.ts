@@ -31,7 +31,7 @@ export const uploadToS3 = async (
   try {
     const params = {
       Bucket: bucketName, // Nazwa bucketu
-      Key: `${Date.now()}-${file.originalname}`, // Unikalna nazwa pliku
+      Key: `uploads/${Date.now()}-${file.originalname}`, // Unikalna nazwa pliku
       Body: file.buffer, // Zawartość pliku - przekazane przez multer
       ContentType: file.mimetype, // Typ MIME pliku (np. image/jpeg)
       // ACL: "public-read", // Publiczny dostęp do pliku
