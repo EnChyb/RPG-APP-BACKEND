@@ -1,4 +1,7 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { IWeapon } from "./Weapon.js";
+import { IArmor } from "./Armor.js";
+import { IGear } from "./Gear.js";
 
 interface IAttribute {
   value: number;
@@ -17,19 +20,13 @@ interface ISkill {
 }
 
 interface ITalent {
-  id: string;
+  _id: string;
   name: string;
   description: string;
-  bonus: "+1" | "+2";
-  level: "1" | "2" | "3";
-  talentType: "Active" | "Passive" | "Situational";
-}
-
-interface IItem {
-  id: string;
-  name: string;
-  type: "Weapon" | "Armor" | "Gear";
-  description: string;
+  bonus: number;
+  level: number;
+  talentType: string;
+  createdByUser: boolean;
 }
 
 export interface ICharacter extends Document {
@@ -65,9 +62,9 @@ export interface ICharacter extends Document {
   additionalSkills: ISkill[];
   talents: ITalent[];
   items: {
-    Weapons: IItem[];
-    Armor: IItem[];
-    Gears: IItem[];
+    Weapons: IWeapon[];
+    Armor: IArmor[];
+    Gears: IGear[];
   };
   GameMaster: string;
   owner: mongoose.Types.ObjectId;
@@ -77,11 +74,11 @@ export interface ICharacter extends Document {
 
 const CharacterSchema = new Schema<ICharacter>(
   {
-    avatar: { type: String, default: "../assets/img/avatar-placeholder.png" },
     name: { type: String, required: true },
     age: { type: String, enum: ["Young", "Adult", "Old"], required: true },
     archetype: { type: String, required: true },
     race: { type: String, required: true },
+    avatar: { type: String, default: "../assets/img/avatar-placeholder.png" },
     RPGSystem: { type: String, default: "Year Zero Engine", required: true },
     appearance: { type: String, required: false },
     history: { type: String, required: false },
@@ -157,22 +154,35 @@ const CharacterSchema = new Schema<ICharacter>(
       },
     ],
     talents: {
-      id: { type: String },
-      name: { type: String },
-      descripption: { type: String },
-      bonus: { type: String, enum: ["+1", "+2"] },
-      level: { type: String, enum: ["1", "2", "3"] },
-      talentType: { type: String, enum: ["Active", "Passive", "Situational"] },
+      type: [
+        {
+          _id: { type: String },
+          name: { type: String },
+          description: { type: String },
+          bonus: { type: Number },
+          level: { type: Number },
+          talentType: { type: String },
+          createdByUser: { type: Boolean },
+        },
+      ],
       default: [],
     },
     items: {
       Weapons: {
         type: [
           {
-            id: String,
-            name: String,
-            type: { type: String, enum: ["Weapon"] },
-            description: String,
+            _id: { type: String },
+            name: { type: String },
+            grip: { type: Number },
+            damageType: { type: String },
+            extraDiceOffence: { type: Number },
+            extraDiceDefence: { type: Number },
+            diceType: { type: Number },
+            weight: { type: Number },
+            damage: { type: Number },
+            range: { type: Number },
+            description: { type: String },
+            createdByUser: { type: Boolean },
           },
         ],
         default: [],
@@ -180,10 +190,14 @@ const CharacterSchema = new Schema<ICharacter>(
       Armor: {
         type: [
           {
-            id: String,
-            name: String,
-            type: { type: String, enum: ["Armor"] },
-            description: String,
+            _id: { type: String },
+            name: { type: String },
+            bodyPart: { type: String },
+            armorType: { type: String },
+            weight: { type: Number },
+            defence: { type: Number },
+            description: { type: String },
+            createdByUser: { type: Boolean },
           },
         ],
         default: [],
@@ -191,10 +205,13 @@ const CharacterSchema = new Schema<ICharacter>(
       Gears: {
         type: [
           {
-            id: String,
-            name: String,
-            type: { type: String, enum: ["Gear"] },
-            description: String,
+            _id: { type: String },
+            name: { type: String },
+            gearType: { type: String },
+            weight: { type: Number },
+            description: { type: String },
+            bonusDescription: { type: String },
+            createdByUser: { type: Boolean },
           },
         ],
         default: [],

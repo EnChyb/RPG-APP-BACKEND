@@ -72,9 +72,9 @@ export const createCharacter: RequestHandler = async (
 
     // Jeśli items nie jest podane, ustaw domyślne puste sekcje
     const items = {
-      Weapons: req.body.items?.Weapons ?? [],
-      Armor: req.body.items?.Armor ?? [],
-      Gears: req.body.items?.Gears ?? [],
+      Weapons: req.body.items?.weapons ?? [],
+      Armor: req.body.items?.armor?.filter(Boolean) ?? [],
+      Gears: req.body.items?.gear?.filter(Boolean) ?? [],
     };
 
     // Ustaw domyślny avatar, jeśli brak przesłanego
