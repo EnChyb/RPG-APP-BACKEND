@@ -30,6 +30,7 @@ interface ITalent {
 }
 
 export interface ICharacter extends Document {
+  _id: String;
   avatar: string;
   name: string;
   age: "Young" | "Adult" | "Old";
