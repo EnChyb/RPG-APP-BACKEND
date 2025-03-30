@@ -1,4 +1,4 @@
-import { RequestHandler } from "express";
+import { RequestHandler, Response, NextFunction } from "express";
 import Character from "../../models/Character.js";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
 
@@ -6,8 +6,8 @@ const DEFAULT_AVATAR = "../../assets/img/avatar-placeholder.png";
 
 export const createCharacter: RequestHandler = async (
   req: AuthenticatedRequest,
-  res,
-  next
+  res: Response,
+  next: NextFunction
 ): Promise<void> => {
   try {
     const skillToAttributeMap: Record<
@@ -47,8 +47,6 @@ export const createCharacter: RequestHandler = async (
       req.body.skills[skill].displayName = skill;
     }
 
-    // Automatyczne wyliczanie limitów obrażeń na podstawie atrybutów
-    const { Strength, Agility, Wits, Empathy } = req.body.attributes;
     const wounds = {
       Damage: { current: 0, displayName: "Damage" },
       Fatigue: { current: 0, displayName: "Fatigue" },
@@ -72,9 +70,9 @@ export const createCharacter: RequestHandler = async (
 
     // Jeśli items nie jest podane, ustaw domyślne puste sekcje
     const items = {
-      Weapons: req.body.items?.Weapons ?? [],
-      Armor: req.body.items?.Armor ?? [],
-      Gears: req.body.items?.Gears ?? [],
+      Weapons: req.body.items?.weapons ?? [],
+      Armor: req.body.items?.armor?.filter(Boolean) ?? [],
+      Gears: req.body.items?.gear?.filter(Boolean) ?? [],
     };
 
     // Ustaw domyślny avatar, jeśli brak przesłanego
@@ -91,7 +89,6 @@ export const createCharacter: RequestHandler = async (
       items, // Jeśli podano, zapisuje się, jeśli nie, pozostaje puste
       GameMaster: "",
     });
-
     await newCharacter.save();
     res
       .status(201)
