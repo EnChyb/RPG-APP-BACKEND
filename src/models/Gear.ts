@@ -2,24 +2,45 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IGear extends Document {
   _id: string;
-  name: string;
-  gearType: string;
+  name: {
+    pl: string;
+    en: string;
+  };
+  gearType: {
+    pl: string;
+    en: string;
+  };
   weight: number;
-  description: string;
-  bonusDescription: string;
+  description: {
+    pl: string;
+    en: string;
+  };
+  bonusDescription: {
+    pl: string;
+    en: string;
+  };
   createdByUser: boolean;
 }
 
-const GearSchema: Schema = new Schema(
-  {
-    name: { type: String },
-    gearType: { type: String },
-    weight: { type: Number },
-    description: { type: String },
-    bonusDescription: { type: String },
-    createdByUser: { type: Boolean },
+export const GearSchema: Schema = new Schema({
+  name: {
+    pl: { type: String },
+    en: { type: String },
   },
-  { strict: false }
-);
+  gearType: {
+    pl: { type: String },
+    en: { type: String },
+  },
+  weight: { type: Number, required: true },
+  description: {
+    pl: { type: String },
+    en: { type: String },
+  },
+  bonusDescription: {
+    pl: { type: String },
+    en: { type: String },
+  },
+  createdByUser: { type: Boolean, default: false },
+});
 
 export default mongoose.model<IGear>("Gear", GearSchema, "gear");

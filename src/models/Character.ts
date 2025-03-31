@@ -1,7 +1,8 @@
 import mongoose, { Schema, Document } from "mongoose";
-import { IWeapon } from "./Weapon.js";
-import { IArmor } from "./Armor.js";
-import { IGear } from "./Gear.js";
+import { TalentSchema, ITalent } from "./Talent.js";
+import { WeaponSchema, IWeapon } from "./Weapon.js";
+import { ArmorSchema, IArmor } from "./Armor.js";
+import { GearSchema, IGear } from "./Gear.js";
 
 interface IAttribute {
   value: number;
@@ -17,16 +18,6 @@ interface ISkill {
   displayName: string;
   value: number;
   linkedAttribute: "Strength" | "Agility" | "Wits" | "Empathy";
-}
-
-interface ITalent {
-  _id: string;
-  name: string;
-  description: string;
-  bonus: number;
-  level: number;
-  talentType: string;
-  createdByUser: boolean;
 }
 
 export interface ICharacter extends Document {
@@ -155,66 +146,20 @@ const CharacterSchema = new Schema<ICharacter>(
       },
     ],
     talents: {
-      type: [
-        {
-          _id: { type: String },
-          name: { type: String },
-          description: { type: String },
-          bonus: { type: Number },
-          level: { type: Number },
-          talentType: { type: String },
-          createdByUser: { type: Boolean },
-        },
-      ],
+      type: [TalentSchema],
       default: [],
     },
     items: {
       Weapons: {
-        type: [
-          {
-            _id: { type: String },
-            name: { type: String },
-            grip: { type: Number },
-            damageType: { type: String },
-            extraDiceOffence: { type: Number },
-            extraDiceDefence: { type: Number },
-            diceType: { type: Number },
-            weight: { type: Number },
-            damage: { type: Number },
-            range: { type: Number },
-            description: { type: String },
-            createdByUser: { type: Boolean },
-          },
-        ],
+        type: [WeaponSchema],
         default: [],
       },
       Armor: {
-        type: [
-          {
-            _id: { type: String },
-            name: { type: String },
-            bodyPart: { type: String },
-            armorType: { type: String },
-            weight: { type: Number },
-            defence: { type: Number },
-            description: { type: String },
-            createdByUser: { type: Boolean },
-          },
-        ],
+        type: [ArmorSchema],
         default: [],
       },
       Gears: {
-        type: [
-          {
-            _id: { type: String },
-            name: { type: String },
-            gearType: { type: String },
-            weight: { type: Number },
-            description: { type: String },
-            bonusDescription: { type: String },
-            createdByUser: { type: Boolean },
-          },
-        ],
+        type: [GearSchema],
         default: [],
       },
     },

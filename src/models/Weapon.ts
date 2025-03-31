@@ -2,34 +2,49 @@ import mongoose, { Schema, Document } from "mongoose";
 
 export interface IWeapon extends Document {
   _id: string;
-  name: string;
+  name: {
+    pl: string;
+    en: string;
+  };
   grip: number;
-  damageType: string;
+  damageType: {
+    pl: string;
+    en: string;
+  };
   extraDiceOffence: number;
   extraDiceDefence: number;
   diceType: number;
   weight: number;
   damage: number;
   range: number;
-  description: string;
+  description: {
+    pl: string;
+    en: string;
+  };
   createdByUser: boolean;
 }
 
-const WeaponSchema: Schema = new Schema(
-  {
-    name: { type: String },
-    grip: { type: Number },
-    damageType: { type: String },
-    extraDiceOffence: { type: Number },
-    extraDiceDefence: { type: Number },
-    diceType: { type: Number },
-    weight: { type: Number },
-    damage: { type: Number },
-    range: { type: Number },
-    description: { type: String },
-    createdByUser: { type: Boolean },
+export const WeaponSchema: Schema = new Schema({
+  name: {
+    pl: { type: String },
+    en: { type: String },
   },
-  { strict: false }
-);
+  grip: { type: Number, required: true },
+  damageType: {
+    pl: { type: String },
+    en: { type: String },
+  },
+  extraDiceOffence: { type: Number, required: true },
+  extraDiceDefence: { type: Number, required: true },
+  diceType: { type: Number, required: true },
+  weight: { type: Number, required: true },
+  damage: { type: Number, required: true },
+  range: { type: Number, required: true },
+  description: {
+    pl: { type: String },
+    en: { type: String },
+  },
+  createdByUser: { type: Boolean, default: false },
+});
 
 export default mongoose.model<IWeapon>("Weapon", WeaponSchema, "weapons");
