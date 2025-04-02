@@ -21,7 +21,7 @@ interface ISkill {
 }
 
 export interface ICharacter extends Document {
-  _id: String;
+  _id: string;
   avatar: string;
   name: string;
   age: "Young" | "Adult" | "Old";
