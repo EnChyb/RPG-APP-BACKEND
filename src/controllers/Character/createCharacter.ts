@@ -40,11 +40,15 @@ export const createCharacter: RequestHandler = async (
         !req.body.skills[skill] ||
         req.body.skills[skill].value === undefined
       ) {
-        res.status(400).json({ message: `Missing value for skill: ${skill}.` });
-        return;
+        req.body.skills[skill] = {
+          value: 0,
+          linkedAttribute: skillToAttributeMap[skill],
+          displayName: skill,
+        };
+      } else {
+        req.body.skills[skill].linkedAttribute = skillToAttributeMap[skill];
+        req.body.skills[skill].displayName = skill;
       }
-      req.body.skills[skill].linkedAttribute = skillToAttributeMap[skill];
-      req.body.skills[skill].displayName = skill;
     }
 
     const wounds = {
@@ -63,10 +67,11 @@ export const createCharacter: RequestHandler = async (
     };
 
     // Jeśli talents nie jest podane, ustaw pustą tablicę
-    const talents =
-      req.body.talents && Array.isArray(req.body.talents)
-        ? req.body.talents
-        : [];
+    const talents = Array.isArray(req.body.talents) ? req.body.talents : [];
+    // const talents =
+    //   req.body.talents && Array.isArray(req.body.talents)
+    //     ? req.body.talents
+    //     : [];
 
     // Jeśli items nie jest podane, ustaw domyślne puste sekcje
     const items = {
