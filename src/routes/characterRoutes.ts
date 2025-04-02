@@ -7,7 +7,7 @@ import {
   getAllCharacters,
 } from "../controllers/Character/index.js";
 import protect from "../middlewares/authMiddleware.js";
-import { uploadAvatar } from "../middlewares/avatarMiddleware.js";
+import uploadAvatar  from "../middlewares/avatarMiddleware.js";
 
 const router = express.Router();
 
