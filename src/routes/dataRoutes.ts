@@ -3,8 +3,28 @@ import Talent from "../models/Talent.js";
 import Weapon from "../models/Weapon.js";
 import Armor from "../models/Armor.js";
 import Gear from "../models/Gear.js";
+import Race from "../models/Race.js"
+import Archetype from "../models/Archetype.js";
 
 const router = express.Router();
+
+router.get("/races", async (_req, res) => {
+  try {
+    const races = await Race.find();
+    res.json(races);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch races", error: err });
+  }
+});
+
+router.get("/archetypes", async (_req, res) => {
+  try {
+    const archetypes = await Archetype.find();
+    res.json(archetypes);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch races", error: err });
+  }
+});
 
 router.get("/talents", async (_req, res) => {
   try {
