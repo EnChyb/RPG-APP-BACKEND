@@ -10,6 +10,15 @@ export const createCharacter: RequestHandler = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+
+    if (req.body.data) {
+      const parsedData = JSON.parse(req.body.data);
+      req.body = {
+        ...parsedData,
+        avatar: req.body.avatar, // this will come from uploadAvatar middleware
+      };
+    }
+
     const skillToAttributeMap: Record<
       string,
       "Strength" | "Agility" | "Wits" | "Empathy"
@@ -68,10 +77,6 @@ export const createCharacter: RequestHandler = async (
 
     // Jeśli talents nie jest podane, ustaw pustą tablicę
     const talents = Array.isArray(req.body.talents) ? req.body.talents : [];
-    // const talents =
-    //   req.body.talents && Array.isArray(req.body.talents)
-    //     ? req.body.talents
-    //     : [];
 
     // Jeśli items nie jest podane, ustaw domyślne puste sekcje
     const items = {
