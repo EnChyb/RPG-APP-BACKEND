@@ -24,7 +24,10 @@ export interface ICharacter extends Document {
   _id: string;
   avatar: string;
   name: string;
-  age: "Young" | "Adult" | "Old";
+  age: {
+    en: "Young" | "Adult" | "Old";
+    pl: string;
+  };
   archetype: string;
   race: string;
   RPGSystem: string;
@@ -67,7 +70,10 @@ export interface ICharacter extends Document {
 const CharacterSchema = new Schema<ICharacter>(
   {
     name: { type: String, required: true },
-    age: { type: String, enum: ["Young", "Adult", "Old"], required: true },
+    age: {
+      en: { type: String, enum: ["Young", "Adult", "Old"], required: true },
+      pl: { type: String, required: true },
+    },
     archetype: { type: String, required: true },
     race: { type: String, required: true },
     avatar: { type: String, default: "../assets/img/avatar-placeholder.png" },
@@ -151,7 +157,8 @@ const CharacterSchema = new Schema<ICharacter>(
     },
     items: {
       Weapons: {
-        type: [WeaponSchema],
+        type: [WeaponSchema
+        ],
         default: [],
       },
       Armor: {
