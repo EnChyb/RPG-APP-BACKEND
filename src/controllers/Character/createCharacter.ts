@@ -19,6 +19,8 @@ export const createCharacter: RequestHandler = async (
       };
     }
 
+    const characterAge = req.body.age || { en: "Adult", pl: "Dorosły" };
+
     const skillToAttributeMap: Record<
       string,
       "Strength" | "Agility" | "Wits" | "Empathy"

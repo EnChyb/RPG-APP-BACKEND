@@ -7,6 +7,7 @@ export interface IWeapon extends Document {
     en: string;
   };
   grip: number;
+  hand?: 'right' | 'left' | 'both';
   damageType: {
     pl: string;
     en: string;
@@ -30,6 +31,11 @@ export const WeaponSchema: Schema = new Schema({
     en: { type: String },
   },
   grip: { type: Number, required: true },
+  hand: {
+    type: String,
+    enum: ["right", "left", "both"],
+    required: false, // only needed when associated with character
+  },
   damageType: {
     pl: { type: String },
     en: { type: String },
