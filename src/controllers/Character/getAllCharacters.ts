@@ -28,6 +28,7 @@ export const getAllCharacters: RequestHandler = async (
       age: character.age,
       archetype: character.archetype,
       race: character.race,
+      avatar: character.avatar,
       RPGSystem: character.RPGSystem,
       appearance: character.appearance,
       bigDream: character.bigDream,
