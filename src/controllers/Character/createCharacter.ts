@@ -2,7 +2,7 @@ import { RequestHandler, Response, NextFunction } from "express";
 import Character from "../../models/Character.js";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
 
-const DEFAULT_AVATAR = "../../assets/img/avatar-placeholder.png";
+const DEFAULT_AVATAR = "https://avatars-user-bucket.s3.eu-north-1.amazonaws.com/uploads/1745061241749-8bd8af78-47d2-4162-8b7e-07e4b0fc7561.jpg";
 
 export const createCharacter: RequestHandler = async (
   req: AuthenticatedRequest,
@@ -19,7 +19,7 @@ export const createCharacter: RequestHandler = async (
       };
     }
 
-    const characterAge = req.body.age || { en: "Adult", pl: "Dorosły" };
+    // const characterAge = req.body.age || { en: "Adult", pl: "Dorosły" };
 
     const skillToAttributeMap: Record<
       string,
