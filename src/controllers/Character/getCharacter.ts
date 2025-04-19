@@ -21,7 +21,7 @@ export const getCharacter: RequestHandler = async (
     const cleanItems = (items: any[]) =>
       items?.map(({ _id, ...rest }) => rest) ?? [];
 
-    const cleanedWeapons = character.items?.Weapons?.map((weapon) => {
+    const cleanedWeapons = character.items?.weapons?.map((weapon) => {
       const { _id, ...rest } = weapon;
       return {
         ...rest,
@@ -52,9 +52,9 @@ export const getCharacter: RequestHandler = async (
       talents: cleanItems(character.talents),
 
       items: {
-        Weapons: cleanedWeapons,
-        Armor: cleanItems(character.items?.Armor),
-        Gears: cleanItems(character.items?.Gears),
+        weapons: cleanedWeapons,
+        armor: cleanItems(character.items?.armor),
+        gears: cleanItems(character.items?.gears),
       },
 
       GameMaster: character.GameMaster,

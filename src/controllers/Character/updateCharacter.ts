@@ -98,9 +98,9 @@ export const updateCharacter: RequestHandler = async (
 
     if (updates.items) {
       character.items = {
-        Weapons: updates.items.Weapons ?? character.items.Weapons,
-        Armor: updates.items.Armor ?? character.items.Armor,
-        Gears: updates.items.Gears ?? character.items.Gears,
+        weapons: updates.items.Weapons ?? character.items.weapons,
+        armor: updates.items.Armor ?? character.items.armor,
+        gears: updates.items.Gears ?? character.items.gears,
       };
     }
 

@@ -44,9 +44,9 @@ export const getAllCharacters: RequestHandler = async (
       talents: cleanNestedArray(character.talents),
 
       items: {
-        Weapons: cleanNestedArray(character.items?.Weapons),
-        Armor: cleanNestedArray(character.items?.Armor),
-        Gears: cleanNestedArray(character.items?.Gears),
+        weapons: cleanNestedArray(character.items?.weapons),
+        armor: cleanNestedArray(character.items?.armor),
+        gears: cleanNestedArray(character.items?.gears),
       },
 
       GameMaster: character.GameMaster,
