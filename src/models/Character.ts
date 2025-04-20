@@ -57,9 +57,9 @@ export interface ICharacter extends Document {
   additionalSkills: ISkill[];
   talents: ITalent[];
   items: {
-    Weapons: IWeapon[];
-    Armor: IArmor[];
-    Gears: IGear[];
+    weapons: IWeapon[];
+    armor: IArmor[];
+    gears: IGear[];
   };
   GameMaster: string;
   owner: mongoose.Types.ObjectId;
@@ -156,16 +156,16 @@ const CharacterSchema = new Schema<ICharacter>(
       default: [],
     },
     items: {
-      Weapons: {
+      weapons: {
         type: [WeaponSchema
         ],
         default: [],
       },
-      Armor: {
+      armor: {
         type: [ArmorSchema],
         default: [],
       },
-      Gears: {
+      gears: {
         type: [GearSchema],
         default: [],
       },
