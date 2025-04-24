@@ -15,7 +15,7 @@ export const updateCharacter: RequestHandler = async (
       const parsedData = JSON.parse(req.body.data);
       req.body = {
         ...parsedData,
-        avatar: req.body.avatar, // avatar from uploadAvatar middleware
+        avatar: req.body.avatar || parsedData.avatar, // avatar from uploadAvatar middleware
       };
     }
 
@@ -49,9 +49,27 @@ export const updateCharacter: RequestHandler = async (
     }
 
     // ✅ Update avatar only if provided (from middleware)
-    if (updates.avatar) {
-      character.avatar = updates.avatar;
+    // if (updates.avatar) {
+    //   character.avatar = updates.avatar;
+    // }
+
+    // ✅ Handle avatar from middleware or direct URL
+if (updates.avatar) {
+  if (typeof updates.avatar === "string") {
+    // validate the URL format
+    const isValidUrl = /^https:\/\/.*\.(jpeg|jpg|png)$/.test(updates.avatar);
+    if (!isValidUrl) {
+      res.status(400).json({ message: "Invalid avatar URL format." });
+      return;
     }
+
+    character.avatar = updates.avatar;
+  } else {
+    res.status(400).json({ message: "Avatar must be a URL string." });
+    return;
+  }
+}
+
 
     // ✅ Simple fields
     if (updates.name) character.name = updates.name;
