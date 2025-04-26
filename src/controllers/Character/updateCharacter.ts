@@ -113,11 +113,18 @@ if (updates.avatar) {
 
     if (updates.items) {
       character.items = {
-        weapons: updates.items.weapons ?? character.items.weapons,
-        armor: updates.items.armor ?? character.items.armor,
-        gears: updates.items.gears ?? character.items.gears,
+        weapons: Array.isArray(updates.items.weapons) && updates.items.weapons.length > 0
+          ? updates.items.weapons
+          : character.items.weapons,
+        armor: Array.isArray(updates.items.armor) && updates.items.armor.length > 0
+          ? updates.items.armor
+          : character.items.armor,
+        gears: Array.isArray(updates.items.gears) && updates.items.gears.length > 0
+          ? updates.items.gears
+          : character.items.gears,
       };
     }
+    
 
     await character.save();
 
