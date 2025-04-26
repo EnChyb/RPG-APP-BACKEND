@@ -20,6 +20,7 @@ export const updateCharacter: RequestHandler = async (
     }
 
     const updates = req.body;
+    console.log("🔵 Incoming updates:", JSON.stringify(updates, null, 2));
 
     const character = await Character.findById(id);
     if (!character) {
@@ -48,11 +49,6 @@ export const updateCharacter: RequestHandler = async (
       }
     }
 
-    // ✅ Update avatar only if provided (from middleware)
-    // if (updates.avatar) {
-    //   character.avatar = updates.avatar;
-    // }
-
     // ✅ Handle avatar from middleware or direct URL
 if (updates.avatar) {
   if (typeof updates.avatar === "string") {
@@ -78,6 +74,7 @@ if (updates.avatar) {
     if (updates.race) character.race = updates.race;
     if (updates.appearance) character.appearance = updates.appearance;
     if (updates.bigDream) character.bigDream = updates.bigDream;
+    if (updates.history) character.history = updates.history;
 
     // ✅ Preserve displayName where needed
     if (updates.attributes) {
@@ -135,6 +132,7 @@ if (updates.avatar) {
         RPGSystem: character.RPGSystem,
         appearance: character.appearance,
         bigDream: character.bigDream,
+        history: character.history,
         avatar: character.avatar, // ✅ included in response
         willpower: character.willpower,
         attributes: character.attributes,
