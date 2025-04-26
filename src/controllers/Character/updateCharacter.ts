@@ -39,7 +39,7 @@ export const updateCharacter: RequestHandler = async (
     }
 
     // Block protected fields
-    const protectedFields = ["_id", "owner", "createdAt", "updatedAt"];
+    const protectedFields = ["_id", "owner", "createdAt", "updatedAt", "age", "race", "archetype"];
     for (const field of Object.keys(updates)) {
       if (protectedFields.includes(field)) {
         res.status(400).json({
@@ -69,9 +69,6 @@ if (updates.avatar) {
 
     // ✅ Simple fields
     if (updates.name) character.name = updates.name;
-    if (updates.age) character.age = updates.age;
-    if (updates.archetype) character.archetype = updates.archetype;
-    if (updates.race) character.race = updates.race;
     if (updates.appearance) character.appearance = updates.appearance;
     if (updates.bigDream) character.bigDream = updates.bigDream;
     if (updates.history) character.history = updates.history;
@@ -158,7 +155,28 @@ if (updates.avatar) {
     };
 
     res.json(formattedResponse);
-  } catch (error) {
-    next(error);
+  } catch (error: any) {
+    console.error("🔴 Error updating character:", error);
+    console.error("🔴 Full error object:", JSON.stringify(error, null, 2));
+  
+    if (error.name === "ValidationError") {
+      // Mongoose ValidationError (e.g. missing required field, wrong format, etc.)
+      res.status(400).json({
+        message: "Validation failed.",
+        errors: error.errors, // show exactly which fields failed
+      });
+    }
+  
+    if (error.name === "CastError") {
+      // E.g. invalid ObjectId format
+      res.status(400).json({
+        message: "Invalid ID format.",
+      });
+    }
+  
+    res.status(500).json({
+      message: "Internal Server Error",
+      error: error.message || "Something went wrong",
+    });
   }
 };
