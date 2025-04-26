@@ -5,6 +5,7 @@ import {
   updateCharacter,
   deleteCharacter,
   getAllCharacters,
+  uploadAvatarOnly
 } from "../controllers/Character/index.js";
 import protect from "../middlewares/authMiddleware.js";
 import uploadAvatar  from "../middlewares/avatarMiddleware.js";
@@ -252,5 +253,6 @@ router.patch("/:id", protect, uploadAvatar, updateCharacter);
  *         description: Character not found
  */
 router.delete("/:id", protect, deleteCharacter);
+router.post("/upload-avatar", protect, uploadAvatar, uploadAvatarOnly);
 
 export default router;
