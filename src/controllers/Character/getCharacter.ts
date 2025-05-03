@@ -40,6 +40,9 @@ export const getCharacter: RequestHandler = async (
       appearance: character.appearance,
       history: character.history,
       bigDream: character.bigDream,
+      gold: character.gold,
+      characterLevel: character.characterLevel,
+      experiencePoints: character.experiencePoints,
       owner: character.owner,
 
       willpower: character.willpower,
