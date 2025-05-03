@@ -72,6 +72,9 @@ if (updates.avatar) {
     if (updates.appearance) character.appearance = updates.appearance;
     if (updates.bigDream) character.bigDream = updates.bigDream;
     if (updates.history) character.history = updates.history;
+    if (updates.gold) character.gold = updates.gold;
+    if (updates.characterLevel) character.characterLevel = updates.characterLevel;
+    if (updates.experiencePoints) character.experiencePoints = updates.experiencePoints;
 
     // ✅ Preserve displayName where needed
     if (updates.attributes) {
@@ -138,6 +141,9 @@ if (updates.avatar) {
         bigDream: character.bigDream,
         history: character.history,
         avatar: character.avatar, // ✅ included in response
+        gold: character.gold,
+        characterLevel: character.characterLevel,
+        experiencePoints: character.experiencePoints,
         willpower: character.willpower,
         attributes: character.attributes,
         wounds: character.wounds,

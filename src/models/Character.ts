@@ -34,6 +34,9 @@ export interface ICharacter extends Document {
   appearance: string;
   history: string;
   bigDream: string;
+  gold: number;
+  characterLevel: number;
+  experiencePoints: number;
   willpower: { value: number; displayName: string };
   attributes: {
     Strength: IAttribute;
@@ -81,6 +84,9 @@ const CharacterSchema = new Schema<ICharacter>(
     appearance: { type: String, required: false },
     history: { type: String, required: false },
     bigDream: { type: String, required: false },
+    gold: { type: Number, default: 0 },
+    characterLevel: { type: Number, default: 1 },
+    experiencePoints: { type: Number, default: 0 },
     willpower: {
       value: { type: Number, default: 0 },
       displayName: { type: String, default: "Willpower" },
