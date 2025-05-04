@@ -85,12 +85,21 @@ if (updates.avatar) {
       };
     }
 
-    if (updates.skills) {
-      character.skills = {
-        ...character.skills,
-        ...updates.skills,
-      };
+    if (updates.skills && typeof updates.skills === "object") {
+      const updatedSkills: Record<string, ISkill> = {};
+    
+      for (const [key, newSkill] of Object.entries(updates.skills)) {
+        const currentSkill = (character.skills as Record<string, ISkill>)[key] || {};
+    
+        updatedSkills[key] = {
+          ...(currentSkill || {}),
+          ...(typeof newSkill === "object" && newSkill !== null ? newSkill : {}),
+        };
+      }
+    
+      character.skills = updatedSkills;
     }
+      
 
     if (updates.additionalSkills && Array.isArray(updates.additionalSkills)) {
       const existingSkills = character.additionalSkills || [];
