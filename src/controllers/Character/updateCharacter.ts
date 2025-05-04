@@ -141,6 +141,10 @@ if (updates.avatar) {
       };
     }
 
+    if (updates.talents && Array.isArray(updates.talents)) {
+      character.talents = updates.talents;
+    }
+
     if (updates.items) {
       character.items = {
         weapons: Array.isArray(updates.items.weapons) && updates.items.weapons.length > 0
