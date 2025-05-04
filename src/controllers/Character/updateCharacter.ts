@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import Character from "../../models/Character.js";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
+import {ISkill} from "../../models/Character.js";
 
 export const updateCharacter: RequestHandler = async (
   req: AuthenticatedRequest,
@@ -84,12 +85,41 @@ if (updates.avatar) {
       };
     }
 
-    if (updates.skills) {
-      character.skills = {
-        ...character.skills,
-        ...updates.skills,
-      };
+    if (updates.skills && typeof updates.skills === "object") {
+      const updatedSkills: Record<string, ISkill> = {};
+    
+      for (const [key, newSkill] of Object.entries(updates.skills)) {
+        const currentSkill = (character.skills as Record<string, ISkill>)[key] || {};
+    
+        updatedSkills[key] = {
+          ...(currentSkill || {}),
+          ...(typeof newSkill === "object" && newSkill !== null ? newSkill : {}),
+        };
+      }
+    
+      character.skills = updatedSkills;
     }
+      
+
+    if (updates.additionalSkills && Array.isArray(updates.additionalSkills)) {
+      const existingSkills = character.additionalSkills || [];
+    
+      const merged = updates.additionalSkills.map((newSkill: ISkill) => {
+        const existing = existingSkills.find(
+          (s: ISkill) => s.displayName.trim() === newSkill.displayName.trim()
+        );
+        return existing ? { ...existing, ...newSkill } : newSkill;
+      });
+    
+      const unchanged = existingSkills.filter(
+        (s: ISkill) =>
+          !updates.additionalSkills.some(
+            (u: ISkill) => u.displayName.trim() === s.displayName.trim()
+          )
+      );
+    
+      character.additionalSkills = [...unchanged, ...merged];
+    }  
 
     if (updates.wounds) {
       for (const woundType of Object.keys(updates.wounds) as Array<

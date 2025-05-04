@@ -14,7 +14,7 @@ interface IWound {
   displayName: string;
 }
 
-interface ISkill {
+export interface ISkill {
   displayName: string;
   value: number;
   linkedAttribute: "Strength" | "Agility" | "Wits" | "Empathy";
