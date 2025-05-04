@@ -75,7 +75,10 @@ if (updates.avatar) {
     if (updates.history) character.history = updates.history;
     if (updates.gold) character.gold = updates.gold;
     if (updates.characterLevel) character.characterLevel = updates.characterLevel;
-    if (updates.experiencePoints) character.experiencePoints = updates.experiencePoints;
+    if (typeof updates.experiencePoints === "number") {
+      character.experiencePoints = updates.experiencePoints;
+    }
+    
 
     // ✅ Preserve displayName where needed
     if (updates.attributes) {
