@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import Character from "../../models/Character.js";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
+import {ISkill} from "../../models/Character.js";
 
 export const updateCharacter: RequestHandler = async (
   req: AuthenticatedRequest,
@@ -90,6 +91,26 @@ if (updates.avatar) {
         ...updates.skills,
       };
     }
+
+    if (updates.additionalSkills && Array.isArray(updates.additionalSkills)) {
+      const existingSkills = character.additionalSkills || [];
+    
+      const merged = updates.additionalSkills.map((newSkill: ISkill) => {
+        const existing = existingSkills.find(
+          (s: ISkill) => s.displayName.trim() === newSkill.displayName.trim()
+        );
+        return existing ? { ...existing, ...newSkill } : newSkill;
+      });
+    
+      const unchanged = existingSkills.filter(
+        (s: ISkill) =>
+          !updates.additionalSkills.some(
+            (u: ISkill) => u.displayName.trim() === s.displayName.trim()
+          )
+      );
+    
+      character.additionalSkills = [...unchanged, ...merged];
+    }  
 
     if (updates.wounds) {
       for (const woundType of Object.keys(updates.wounds) as Array<
