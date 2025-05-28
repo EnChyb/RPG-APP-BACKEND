@@ -28,6 +28,27 @@ interface ChatMessageData {
     id?: string;
 }
 
+interface DetailedDiceData {
+    userId: string;
+    userName: string;
+    hero: {
+        id: string;
+        name: string;
+        avatar: string;
+        race: string;
+        archetype: string;
+    };
+    testType: string;
+    dicePool: {
+        attribute: { size: number; value: number }[];
+        skill: { size: number; value: number }[];
+        weapon: { size: number; value: number }[];
+    };
+    push: boolean;
+    totalSuccesses: number;
+    timestamp: string;
+}
+
 export function initGameRoomSocket(server: any) {
     const io = new Server(server, {
         cors: {
@@ -50,7 +71,8 @@ export function initGameRoomSocket(server: any) {
         console.log("Nowe połączenie socket: ", socket.id);
 
         socket.on("join_room", (data: JoinRoomData) => {
-            const { roomCode, userId, characterId, isGM } = data;
+            // const { roomCode, userId, characterId, isGM } = data;
+            const { roomCode, userId, isGM } = data;
 
             // Weryfikujemy, czy userId z eventu zgadza się z danymi z tokena
             if (socket.data.user._id.toString() !== userId) {
@@ -64,6 +86,8 @@ export function initGameRoomSocket(server: any) {
                 socket.emit("error", { message: "Incorrect room code format" });
                 return;
             }
+
+            socket.data.roomCode = roomCode;
 
             const userData = {
                 userId: socket.data.user._id.toString(),
@@ -157,6 +181,18 @@ export function initGameRoomSocket(server: any) {
             }
         });
 
+        socket.on("detailed_dice_roll", (payload: DetailedDiceData) => {
+            // a) Upewniamy się, że socket.data.roomCode jest ustawione
+            const roomCode = socket.data.roomCode as string;
+            if (!roomCode) {
+                socket.emit("error", { message: "Not in any room" });
+                return;
+            }
+            console.log(`User ${payload.userId} performed a detailed dice roll in room ${roomCode}:`, payload);
+            // b) Rozsyłamy do wszystkich w tym samym roomCode
+            io.to(roomCode).emit("detailed_dice_roll", payload);
+        });
+
         socket.on("disconnect", () => {
             console.log("Socket disconnected: ", socket.id);
             // Jeśli socket był GM, usuwamy go z mapy
@@ -166,7 +202,7 @@ export function initGameRoomSocket(server: any) {
                     io.to(room).emit("gm_disconnected", { message: "GM disconnected" });
                 }
             }
-             // Aktualizacja listy użytkowników dla wszystkich pokoi, do których należał socket
+            // Aktualizacja listy użytkowników dla wszystkich pokoi, do których należał socket
             socket.rooms.forEach((room) => {
                 if (room === socket.id) return;
                 const clients = Array.from(io.sockets.adapter.rooms.get(room) || []);
