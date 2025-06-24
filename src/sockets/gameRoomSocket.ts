@@ -46,6 +46,7 @@ interface DetailedDiceData {
     };
     push: boolean;
     totalSuccesses: number;
+    failures: number;
     timestamp: string;
 }
 
@@ -88,6 +89,7 @@ export function initGameRoomSocket(server: any) {
             }
 
             socket.data.roomCode = roomCode;
+            socket.join(roomCode);
 
             const userData = {
                 userId: socket.data.user._id.toString(),
@@ -97,9 +99,6 @@ export function initGameRoomSocket(server: any) {
                 avatar: socket.data.user.avatar,
                 role: socket.data.user.role
             };
-
-            socket.join(roomCode);
-
             if (isGM) {
                 // GM tworzy pokój – zapisujemy socket.id dla danego pokoju
                 roomGMs.set(roomCode, socket.id);
@@ -146,21 +145,14 @@ export function initGameRoomSocket(server: any) {
             console.log(`User ${userId} sent message in room ${roomCode}: ${message}`);
             // Rozsyłamy wiadomość do wszystkich uczestników pokoju
             io.to(roomCode).emit("chat_message", messageData);
-
-            // // Wysyłamy wiadomość najpierw do nadawcy...
-            // socket.emit("chat_message", messageData);
-            // // ...a następnie broadcast do pozostałych użytkowników w pokoju
-            // socket.broadcast.to(roomCode).emit("chat_message", messageData);
         });
 
         socket.on("roll_dice", (data: RollDiceData) => {
             const { roomCode, dice, hidden, userId } = data;
-
             if (socket.data.user._id.toString() !== userId) {
                 socket.emit("error", { message: "Authorization error: UserId does not match" });
                 return;
             }
-
             const sides = parseInt(dice.substring(1));
             if (isNaN(sides) || sides <= 0) {
                 socket.emit("error", { message: "Incorrect dice format" });
@@ -168,6 +160,7 @@ export function initGameRoomSocket(server: any) {
             }
             const result = Math.floor(Math.random() * sides) + 1;
             console.log(`User ${userId} roll ${dice} and obtained ${result} in the room ${roomCode}`);
+            console.log(`Roll ${dice} by ${userId} in ${roomCode}: ${result}`);
 
             if (hidden) {
                 const gmSocketId = roomGMs.get(roomCode);
@@ -188,9 +181,55 @@ export function initGameRoomSocket(server: any) {
                 socket.emit("error", { message: "Not in any room" });
                 return;
             }
+            console.log(`Detailed roll by ${payload.userId} in ${roomCode}`, payload);
             console.log(`User ${payload.userId} performed a detailed dice roll in room ${roomCode}:`, payload);
             // b) Rozsyłamy do wszystkich w tym samym roomCode
             io.to(roomCode).emit("detailed_dice_roll", payload);
+        });
+
+        // ———————— NEW: leave_room ————————
+        socket.on("leave_room", (data: { roomCode: string; userId: string }) => {
+            const { roomCode, userId } = data;
+            if (socket.data.user._id.toString() !== userId) {
+                socket.emit("error", { message: "Authorization error: UserId does not match" });
+                return;
+            }
+            socket.leave(roomCode);
+            io.to(roomCode).emit("user_left", { userId });
+            // update users list
+            setTimeout(() => {
+                const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
+                const usersList = clients.map(clientId => {
+                    const clientSocket = io.sockets.sockets.get(clientId);
+                    return {
+                        id: clientSocket?.data.user._id.toString() || "",
+                        firstName: clientSocket?.data.user.firstName,
+                        lastName: clientSocket?.data.user.lastName,
+                        email: clientSocket?.data.user.email,
+                        avatar: clientSocket?.data.user.avatar,
+                        role: clientSocket?.data.user.role,
+                    };
+                });
+                io.to(roomCode).emit("update_room_users", { users: usersList });
+            }, 200);
+        });
+
+        // ———————— NEW: delete_room ————————
+        socket.on("delete_room", (data: { roomCode: string }) => {
+            const { roomCode } = data;
+            const gmSocketId = roomGMs.get(roomCode);
+            if (socket.id !== gmSocketId) {
+                socket.emit("error", { message: "Only GM can delete room" });
+                return;
+            }
+            io.to(roomCode).emit("room_deleted");
+            // force everyone to leave
+            const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
+            clients.forEach(clientId => {
+                const clientSocket = io.sockets.sockets.get(clientId);
+                clientSocket?.leave(roomCode);
+            });
+            roomGMs.delete(roomCode);
         });
 
         socket.on("disconnect", () => {
@@ -203,9 +242,9 @@ export function initGameRoomSocket(server: any) {
                 }
             }
             // Aktualizacja listy użytkowników dla wszystkich pokoi, do których należał socket
-            socket.rooms.forEach((room) => {
-                if (room === socket.id) return;
-                const clients = Array.from(io.sockets.adapter.rooms.get(room) || []);
+            socket.rooms.forEach(roomCode => {
+                if (roomCode === socket.id) return;
+                const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
                 const usersList = clients.map(clientId => {
                     const clientSocket = io.sockets.sockets.get(clientId);
                     return {
@@ -217,7 +256,7 @@ export function initGameRoomSocket(server: any) {
                         role: clientSocket?.data.user.role,
                     };
                 });
-                io.to(room).emit("update_room_users", { users: usersList });
+                io.to(roomCode).emit("update_room_users", { users: usersList });
             });
         });
     });
