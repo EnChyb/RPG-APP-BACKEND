@@ -24,12 +24,14 @@ export interface ICharacter extends Document {
   _id: string;
   avatar: string;
   name: string;
-  age: {
+  characterType: "Hero" | "NPC" | "Monster";
+  age?: {
     en: "Young" | "Adult" | "Old";
     pl: string;
   };
-  archetype: string;
-  race: string;
+  archetype?: string;
+  race?: string;
+  species?: string;
   RPGSystem: string;
   appearance: string;
   history: string;
@@ -74,11 +76,18 @@ const CharacterSchema = new Schema<ICharacter>(
   {
     name: { type: String, required: true },
     age: {
-      en: { type: String, enum: ["Young", "Adult", "Old"], required: true },
-      pl: { type: String, required: true },
+      en: { type: String, enum: ["Young", "Adult", "Old"] },
+      pl: { type: String },
     },
-    archetype: { type: String, required: true },
-    race: { type: String, required: true },
+    characterType: {
+      type: String,
+      enum: ["Hero", "NPC", "Monster"],
+      default: "Hero",
+      required: true,
+    },
+    archetype: { type: String},
+    race: { type: String },
+    species: { type: String },
     avatar: { type: String, default: "../assets/img/avatar-placeholder.png" },
     RPGSystem: { type: String, default: "Year Zero Engine", required: true },
     appearance: { type: String, required: false },

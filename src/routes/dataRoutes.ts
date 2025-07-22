@@ -5,6 +5,7 @@ import Armor from "../models/Armor.js";
 import Gear from "../models/Gear.js";
 import Race from "../models/Race.js"
 import Archetype from "../models/Archetype.js";
+import Species from "../models/Species.js";
 
 const router = express.Router();
 
@@ -57,6 +58,15 @@ router.get("/gear", async (_req, res) => {
   try {
     const gears = await Gear.find();
     res.json(gears);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch gear", error: err });
+  }
+});
+
+router.get("/species", async (_req, res) => {
+  try {
+    const species = await Species.find();
+    res.json(species);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch gear", error: err });
   }
