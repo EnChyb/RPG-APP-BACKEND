@@ -19,7 +19,15 @@ export const createCharacter: RequestHandler = async (
       };
     }
 
-    // const characterAge = req.body.age || { en: "Adult", pl: "Dorosły" };
+    // Clean up fields depending on character type
+if (req.body.characterType === "Monster") {
+  req.body.archetype = "";
+  req.body.race = "";
+  req.body.age = undefined;
+} else {
+  req.body.species = "";
+}
+
 
     const skillToAttributeMap: Record<
       string,
