@@ -1,6 +1,7 @@
 // src/sockets/gameRoomSocket.ts
 import { Server, Socket } from "socket.io";
 import { socketAuthMiddleware } from "../middlewares/socketAuthMiddleware.js";
+import Character, { ICharacter } from "../models/Character.js";
 
 interface JoinRoomData {
     roomCode: string;
@@ -50,6 +51,17 @@ interface DetailedDiceData {
     timestamp: string;
 }
 
+// NOWOŚĆ: Interfejs dla pełnych danych karty, które będziemy rozgłaszać
+interface HeroCardFull {
+    _id: string;
+    name: string;
+    avatar: string;
+    race: string;
+    archetype: string;
+    age: 'Young' | 'Adult' | 'Old';
+    // Można dodać więcej pól w razie potrzeby
+}
+
 export function initGameRoomSocket(server: any) {
     const io = new Server(server, {
         cors: {
@@ -64,6 +76,9 @@ export function initGameRoomSocket(server: any) {
 
     // Mapa przechowująca informacje, który socket pełni rolę GM w danym pokoju
     const roomGMs: Map<string, string> = new Map();
+    // NOWOŚĆ: Struktura do przechowywania aktywnych kart bohaterów
+    // Klucz główny: roomCode, Wartość: Mapa { userId -> HeroCardFull }
+    const activeCardsByRoom: Map<string, Map<string, HeroCardFull>> = new Map();
 
     // Używamy middleware autoryzacji – wywołuje socketAuthMiddleware z katalogu middlewares
     io.use(socketAuthMiddleware);
@@ -71,8 +86,15 @@ export function initGameRoomSocket(server: any) {
     io.on("connection", (socket: Socket) => {
         console.log("Nowe połączenie socket: ", socket.id);
 
+        // NOWOŚĆ: Funkcja pomocnicza do rozgłaszania aktualizacji aktywnych kart
+        const broadcastActiveCards = (roomCode: string) => {
+            const activeCards = activeCardsByRoom.get(roomCode) || new Map();
+            // Konwertujemy mapę na obiekt, bo jest to łatwiejsze do przetworzenia w Reduxie
+            const cardsObject = Object.fromEntries(activeCards.entries());
+            io.to(roomCode).emit("update_active_cards", cardsObject);
+        };
+
         socket.on("join_room", (data: JoinRoomData) => {
-            // const { roomCode, userId, characterId, isGM } = data;
             const { roomCode, userId, isGM } = data;
 
             // Weryfikujemy, czy userId z eventu zgadza się z danymi z tokena
@@ -90,6 +112,11 @@ export function initGameRoomSocket(server: any) {
 
             socket.data.roomCode = roomCode;
             socket.join(roomCode);
+
+            // ZMIANA: Inicjalizujemy mapę dla pokoju, jeśli jeszcze nie istnieje
+            if (!activeCardsByRoom.has(roomCode)) {
+                activeCardsByRoom.set(roomCode, new Map());
+            }
 
             const userData = {
                 userId: socket.data.user._id.toString(),
@@ -130,6 +157,8 @@ export function initGameRoomSocket(server: any) {
                     };
                 });
                 io.to(roomCode).emit("update_room_users", { users: usersList });
+                // ZMIANA: Wysyłamy nowemu użytkownikowi listę aktywnych kart
+                broadcastActiveCards(roomCode);
             }, 500);
         });
 
@@ -187,6 +216,58 @@ export function initGameRoomSocket(server: any) {
             io.to(roomCode).emit("detailed_dice_roll", payload);
         });
 
+        // NOWOŚĆ: Handler wyboru aktywnej karty
+        socket.on("select_active_card", async (data: { roomCode: string; characterId: string }) => {
+            const { roomCode, characterId } = data;
+            const userId = socket.data.user._id.toString();
+            const roomCards = activeCardsByRoom.get(roomCode);
+
+            if (!roomCards) return; // Pokój nie istnieje
+
+            try {
+                // ZMIANA: Dodajemy typowanie do wyniku zapytania
+                const character: ICharacter | null = await Character.findById(characterId).lean();
+                if (!character) {
+                    socket.emit("error", { message: "Character not found" });
+                    return;
+                }
+
+                // ZMIANA: Używamy pola `owner` zamiast `user`
+                if (character.owner.toString() !== userId) {
+                    socket.emit("error", { message: "You can only select your own character" });
+                    return;
+                }
+
+                // ZMIANA: Poprawione tworzenie obiektu z obsługą pól opcjonalnych
+                const cardData: HeroCardFull = {
+                    _id: character._id.toString(),
+                    name: character.name,
+                    avatar: character.avatar,
+                    race: character.race || "", // Domyślna wartość, jeśli pole jest undefined
+                    archetype: character.archetype || "", // Domyślna wartość
+                    age: character.age?.en || 'Adult', // Domyślna wartość 'Adult'
+                };
+
+                roomCards.set(userId, cardData);
+                broadcastActiveCards(roomCode);
+            } catch (error) {
+                console.error("Error selecting character:", error); // Lepsze logowanie błędów
+                socket.emit("error", { message: "Error selecting character" });
+            }
+        });
+
+        // NOWOŚĆ: Handler odznaczenia aktywnej karty
+        socket.on("clear_active_card", (data: { roomCode: string }) => {
+            const { roomCode } = data;
+            const userId = socket.data.user._id.toString();
+            const roomCards = activeCardsByRoom.get(roomCode);
+
+            if (roomCards && roomCards.has(userId)) {
+                roomCards.delete(userId);
+                broadcastActiveCards(roomCode);
+            }
+        });
+
         // ———————— NEW: leave_room ————————
         socket.on("leave_room", (data: { roomCode: string; userId: string }) => {
             const { roomCode, userId } = data;
@@ -230,32 +311,73 @@ export function initGameRoomSocket(server: any) {
                 clientSocket?.leave(roomCode);
             });
             roomGMs.delete(roomCode);
+            // ZMIANA: Czyścimy też aktywne karty dla usuniętego pokoju
+            activeCardsByRoom.delete(roomCode);
         });
 
+        // socket.on("disconnect", () => {
+        //     console.log("Socket disconnected: ", socket.id);
+        //     // Jeśli socket był GM, usuwamy go z mapy
+        //     for (const [room, gmSocketId] of roomGMs.entries()) {
+        //         if (gmSocketId === socket.id) {
+        //             roomGMs.delete(room);
+        //             io.to(room).emit("gm_disconnected", { message: "GM disconnected" });
+        //         }
+        //     }
+        //     // Aktualizacja listy użytkowników dla wszystkich pokoi, do których należał socket
+        //     socket.rooms.forEach(roomCode => {
+        //         if (roomCode === socket.id) return;
+        //         const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
+        //         const usersList = clients.map(clientId => {
+        //             const clientSocket = io.sockets.sockets.get(clientId);
+        //             return {
+        //                 id: clientSocket?.data.user._id.toString() || "",
+        //                 firstName: clientSocket?.data.user.firstName,
+        //                 lastName: clientSocket?.data.user.lastName,
+        //                 email: clientSocket?.data.user.email,
+        //                 avatar: clientSocket?.data.user.avatar,
+        //                 role: clientSocket?.data.user.role,
+        //             };
+        //         });
+        //         io.to(roomCode).emit("update_room_users", { users: usersList });
+        //     });
+        // });
         socket.on("disconnect", () => {
             console.log("Socket disconnected: ", socket.id);
-            // Jeśli socket był GM, usuwamy go z mapy
-            for (const [room, gmSocketId] of roomGMs.entries()) {
-                if (gmSocketId === socket.id) {
-                    roomGMs.delete(room);
-                    io.to(room).emit("gm_disconnected", { message: "GM disconnected" });
-                }
-            }
-            // Aktualizacja listy użytkowników dla wszystkich pokoi, do których należał socket
+            const userId = socket.data.user?._id.toString();
+
+            // ZMIANA: Logika czyszczenia po rozłączeniu
             socket.rooms.forEach(roomCode => {
                 if (roomCode === socket.id) return;
+
+                // Jeśli GM się rozłącza
+                if (roomGMs.get(roomCode) === socket.id) {
+                    roomGMs.delete(roomCode);
+                    io.to(roomCode).emit("gm_disconnected", { message: "GM disconnected" });
+                }
+
+                // Jeśli użytkownik miał aktywną kartę, usuwamy ją
+                const roomCards = activeCardsByRoom.get(roomCode);
+                if (userId && roomCards && roomCards.has(userId)) {
+                    roomCards.delete(userId);
+                    broadcastActiveCards(roomCode);
+                }
+
+                // Aktualizujemy listę użytkowników
                 const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
                 const usersList = clients.map(clientId => {
                     const clientSocket = io.sockets.sockets.get(clientId);
+                    if (!clientSocket) return null;
                     return {
-                        id: clientSocket?.data.user._id.toString() || "",
-                        firstName: clientSocket?.data.user.firstName,
-                        lastName: clientSocket?.data.user.lastName,
-                        email: clientSocket?.data.user.email,
-                        avatar: clientSocket?.data.user.avatar,
-                        role: clientSocket?.data.user.role,
+                        id: clientSocket.data.user._id.toString(),
+                        firstName: clientSocket.data.user.firstName,
+                        lastName: clientSocket.data.user.lastName,
+                        email: clientSocket.data.user.email,
+                        avatar: clientSocket.data.user.avatar,
+                        role: clientSocket.data.user.role,
                     };
-                });
+                }).filter(u => u !== null);
+
                 io.to(roomCode).emit("update_room_users", { users: usersList });
             });
         });
