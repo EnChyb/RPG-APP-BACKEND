@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import Character from "../../models/Character.js";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
+import { spec } from "node:test/reporters";
 
 export const getAllCharacters: RequestHandler = async (
   req: AuthenticatedRequest,
@@ -28,6 +29,8 @@ export const getAllCharacters: RequestHandler = async (
       age: character.age,
       archetype: character.archetype,
       race: character.race,
+      species: character.species,
+      characterType: character.characterType,
       avatar: character.avatar,
       RPGSystem: character.RPGSystem,
       appearance: character.appearance,
