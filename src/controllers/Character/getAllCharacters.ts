@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import Character from "../../models/Character.js";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
+import { spec } from "node:test/reporters";
 
 export const getAllCharacters: RequestHandler = async (
   req: AuthenticatedRequest,
@@ -25,9 +26,11 @@ export const getAllCharacters: RequestHandler = async (
     const orderedCharacters = characters.map((character) => ({
       _id: character._id,
       name: character.name,
-      age: character.age,
+      age: character.age ?? { en: "Adult", pl: "Dorosły" },
       archetype: character.archetype,
       race: character.race,
+      species: character.species ?? "",
+      characterType: character.characterType ?? "Hero",
       avatar: character.avatar,
       RPGSystem: character.RPGSystem,
       appearance: character.appearance,
