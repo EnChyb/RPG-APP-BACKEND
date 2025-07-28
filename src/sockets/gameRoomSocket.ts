@@ -51,15 +51,15 @@ interface DetailedDiceData {
     timestamp: string;
 }
 
-// NOWOŚĆ: Interfejs dla pełnych danych karty, które będziemy rozgłaszać
 interface HeroCardFull {
     _id: string;
     name: string;
     avatar: string;
     race: string;
     archetype: string;
+    species: string;
+    characterType: "Hero" | "NPC" | "Monster";
     age: 'Young' | 'Adult' | 'Old';
-    // Można dodać więcej pól w razie potrzeby
 }
 
 export function initGameRoomSocket(server: any) {
@@ -76,11 +76,11 @@ export function initGameRoomSocket(server: any) {
 
     // Mapa przechowująca informacje, który socket pełni rolę GM w danym pokoju
     const roomGMs: Map<string, string> = new Map();
-    // NOWOŚĆ: Struktura do przechowywania aktywnych kart bohaterów
-    // Klucz główny: roomCode, Wartość: Mapa { userId -> HeroCardFull }
     const activeCardsByRoom: Map<string, Map<string, HeroCardFull>> = new Map();
+    // NOWE STRUKTURY DANYCH
+    const activeNpcsByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
+    const activeMonstersByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
 
-    // Używamy middleware autoryzacji – wywołuje socketAuthMiddleware z katalogu middlewares
     io.use(socketAuthMiddleware);
 
     io.on("connection", (socket: Socket) => {
@@ -92,6 +92,14 @@ export function initGameRoomSocket(server: any) {
             // Konwertujemy mapę na obiekt, bo jest to łatwiejsze do przetworzenia w Reduxie
             const cardsObject = Object.fromEntries(activeCards.entries());
             io.to(roomCode).emit("update_active_cards", cardsObject);
+        };
+        const broadcastActiveNpcs = (roomCode: string) => {
+            const activeNpcs = activeNpcsByRoom.get(roomCode) || new Map();
+            io.to(roomCode).emit("update_active_npcs", Object.fromEntries(activeNpcs.entries()));
+        };
+        const broadcastActiveMonsters = (roomCode: string) => {
+            const activeMonsters = activeMonstersByRoom.get(roomCode) || new Map();
+            io.to(roomCode).emit("update_active_monsters", Object.fromEntries(activeMonsters.entries()));
         };
 
         socket.on("join_room", (data: JoinRoomData) => {
@@ -142,6 +150,9 @@ export function initGameRoomSocket(server: any) {
                 socket.emit("room_joined", { roomCode, userData });
                 socket.to(roomCode).emit("user_joined", userData);
             }
+            if (!activeNpcsByRoom.has(data.roomCode)) activeNpcsByRoom.set(data.roomCode, new Map());
+            if (!activeMonstersByRoom.has(data.roomCode)) activeMonstersByRoom.set(data.roomCode, new Map());
+
             // Pobieramy listę socketów w pokoju i wysyłamy aktualizację
             setTimeout(() => {
                 const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
@@ -159,6 +170,8 @@ export function initGameRoomSocket(server: any) {
                 io.to(roomCode).emit("update_room_users", { users: usersList });
                 // ZMIANA: Wysyłamy nowemu użytkownikowi listę aktywnych kart
                 broadcastActiveCards(roomCode);
+                broadcastActiveNpcs(data.roomCode);
+                broadcastActiveMonsters(data.roomCode);
             }, 500);
         });
 
@@ -243,15 +256,17 @@ export function initGameRoomSocket(server: any) {
                     _id: character._id.toString(),
                     name: character.name,
                     avatar: character.avatar,
-                    race: character.race || "", // Domyślna wartość, jeśli pole jest undefined
-                    archetype: character.archetype || "", // Domyślna wartość
-                    age: character.age?.en || 'Adult', // Domyślna wartość 'Adult'
+                    race: character.race || "",
+                    archetype: character.archetype || "",
+                    species: character.species || "",
+                    characterType: character.characterType,
+                    age: character.age?.en || 'Adult',
                 };
 
                 roomCards.set(userId, cardData);
                 broadcastActiveCards(roomCode);
             } catch (error) {
-                console.error("Error selecting character:", error); // Lepsze logowanie błędów
+                console.error("Error selecting character:", error);
                 socket.emit("error", { message: "Error selecting character" });
             }
         });
@@ -268,6 +283,48 @@ export function initGameRoomSocket(server: any) {
             }
         });
 
+        // NOWY HANDLER DLA NPC
+        socket.on("select_npcs", async (data: { roomCode: string; characterIds: string[] }) => {
+            const { roomCode, characterIds } = data;
+            const userId = socket.data.user._id.toString();
+            const roomNpcs = activeNpcsByRoom.get(roomCode);
+            if (!roomNpcs) return;
+
+            try {
+                const characters = await Character.find({ '_id': { $in: characterIds }, characterType: 'NPC' }).lean();
+                const cardData: HeroCardFull[] = characters.map(c => ({
+                    _id: c._id.toString(), name: c.name, avatar: c.avatar,
+                    race: c.race || '', archetype: c.archetype || '', species: c.species || '',
+                    characterType: c.characterType, age: c.age?.en || 'Adult',
+                }));
+                roomNpcs.set(userId, cardData);
+                broadcastActiveNpcs(roomCode);
+            } catch (error) {
+                socket.emit("error", { message: "Error selecting NPCs" });
+            }
+        });
+
+        // NOWY HANDLER DLA POTWORÓW
+        socket.on("select_monsters", async (data: { roomCode: string; characterIds: string[] }) => {
+            const { roomCode, characterIds } = data;
+            const userId = socket.data.user._id.toString();
+            const roomMonsters = activeMonstersByRoom.get(roomCode);
+            if (!roomMonsters) return;
+
+            try {
+                const characters = await Character.find({ '_id': { $in: characterIds }, characterType: 'Monster' }).lean();
+                const cardData: HeroCardFull[] = characters.map(c => ({
+                    _id: c._id.toString(), name: c.name, avatar: c.avatar,
+                    race: c.race || '', archetype: c.archetype || '', species: c.species || '',
+                    characterType: c.characterType, age: c.age?.en || 'Adult',
+                }));
+                roomMonsters.set(userId, cardData);
+                broadcastActiveMonsters(roomCode);
+            } catch (error) {
+                socket.emit("error", { message: "Error selecting Monsters" });
+            }
+        });
+
         // ———————— NEW: leave_room ————————
         socket.on("leave_room", (data: { roomCode: string; userId: string }) => {
             const { roomCode, userId } = data;
@@ -277,7 +334,6 @@ export function initGameRoomSocket(server: any) {
             }
             socket.leave(roomCode);
             io.to(roomCode).emit("user_left", { userId });
-            // update users list
             setTimeout(() => {
                 const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
                 const usersList = clients.map(clientId => {
@@ -304,49 +360,19 @@ export function initGameRoomSocket(server: any) {
                 return;
             }
             io.to(roomCode).emit("room_deleted");
-            // force everyone to leave
             const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
             clients.forEach(clientId => {
                 const clientSocket = io.sockets.sockets.get(clientId);
                 clientSocket?.leave(roomCode);
             });
             roomGMs.delete(roomCode);
-            // ZMIANA: Czyścimy też aktywne karty dla usuniętego pokoju
             activeCardsByRoom.delete(roomCode);
         });
 
-        // socket.on("disconnect", () => {
-        //     console.log("Socket disconnected: ", socket.id);
-        //     // Jeśli socket był GM, usuwamy go z mapy
-        //     for (const [room, gmSocketId] of roomGMs.entries()) {
-        //         if (gmSocketId === socket.id) {
-        //             roomGMs.delete(room);
-        //             io.to(room).emit("gm_disconnected", { message: "GM disconnected" });
-        //         }
-        //     }
-        //     // Aktualizacja listy użytkowników dla wszystkich pokoi, do których należał socket
-        //     socket.rooms.forEach(roomCode => {
-        //         if (roomCode === socket.id) return;
-        //         const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
-        //         const usersList = clients.map(clientId => {
-        //             const clientSocket = io.sockets.sockets.get(clientId);
-        //             return {
-        //                 id: clientSocket?.data.user._id.toString() || "",
-        //                 firstName: clientSocket?.data.user.firstName,
-        //                 lastName: clientSocket?.data.user.lastName,
-        //                 email: clientSocket?.data.user.email,
-        //                 avatar: clientSocket?.data.user.avatar,
-        //                 role: clientSocket?.data.user.role,
-        //             };
-        //         });
-        //         io.to(roomCode).emit("update_room_users", { users: usersList });
-        //     });
-        // });
         socket.on("disconnect", () => {
             console.log("Socket disconnected: ", socket.id);
             const userId = socket.data.user?._id.toString();
 
-            // ZMIANA: Logika czyszczenia po rozłączeniu
             socket.rooms.forEach(roomCode => {
                 if (roomCode === socket.id) return;
 
@@ -361,6 +387,18 @@ export function initGameRoomSocket(server: any) {
                 if (userId && roomCards && roomCards.has(userId)) {
                     roomCards.delete(userId);
                     broadcastActiveCards(roomCode);
+                }
+
+                // Czyszczenie dla NPC i Potworów
+                const roomNpcs = activeNpcsByRoom.get(roomCode);
+                if (userId && roomNpcs?.has(userId)) {
+                    roomNpcs.delete(userId);
+                    broadcastActiveNpcs(roomCode);
+                }
+                const roomMonsters = activeMonstersByRoom.get(roomCode);
+                if (userId && roomMonsters?.has(userId)) {
+                    roomMonsters.delete(userId);
+                    broadcastActiveMonsters(roomCode);
                 }
 
                 // Aktualizujemy listę użytkowników
