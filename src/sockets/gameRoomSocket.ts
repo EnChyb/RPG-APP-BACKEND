@@ -2,11 +2,12 @@
 import { Server, Socket } from "socket.io";
 import { socketAuthMiddleware } from "../middlewares/socketAuthMiddleware.js";
 import Character, { ICharacter } from "../models/Character.js";
+import Event, { IEvent } from "../models/Event.js";
 
-// NOWOŚĆ: Definicja ról w pokoju gry
+// Definicja ról w pokoju gry
 type RoomRole = 'RoomMaster' | 'Participant';
 
-// NOWOŚĆ: Interfejs uczestnika pokoju gry
+// Interfejs uczestnika pokoju gry
 interface RoomParticipant {
     socketId: string;
     userId: string;
@@ -17,7 +18,7 @@ interface RoomParticipant {
     roomRole: RoomRole;
 }
 
-// NOWOŚĆ: Interfejs dla stanu pokoju gry
+// Interfejs dla stanu pokoju gry
 interface GameRoomState {
     roomMasterId: string; // socket.id aktualnego MPG
     participants: RoomParticipant[];
@@ -27,7 +28,6 @@ interface JoinRoomData {
     roomCode: string;
     userId: string;
     characterId?: string;
-    // ZMIANA: usunięto isGM, serwer będzie decydował o roli
 }
 
 interface ChatMessageData {
@@ -70,6 +70,18 @@ interface HeroCardFull {
     age: 'Young' | 'Adult' | 'Old';
 }
 
+interface StartEventData {
+    roomCode: string;
+    event: IEvent; // Pełny obiekt eventu zwrócony z API
+}
+
+interface SubmitInitiativeData {
+    roomCode: string;
+    eventId: string;
+    characterId: string;
+    initiative: number;
+}
+
 export function initGameRoomSocket(server: any) {
     const io = new Server(server, {
         cors: {
@@ -82,19 +94,20 @@ export function initGameRoomSocket(server: any) {
         },
     });
 
-    // ZMIANA: Główna struktura do zarządzania stanem wszystkich pokoi gry
+    //  Główna struktura do zarządzania stanem wszystkich pokoi gry
     const gameRooms: Map<string, GameRoomState> = new Map();
     // Poniższe struktury pozostają bez zmian
     const activeCardsByRoom: Map<string, Map<string, HeroCardFull>> = new Map();
     const activeNpcsByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
     const activeMonstersByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
+    const activeEventByRoom: Map<string, IEvent> = new Map();
 
     io.use(socketAuthMiddleware);
 
     io.on("connection", (socket: Socket) => {
         console.log("Nowe połączenie socket: ", socket.id);
 
-        // NOWOŚĆ: Funkcja pomocnicza do wysyłania aktualizacji listy użytkowników
+        // Funkcja pomocnicza do wysyłania aktualizacji listy użytkowników
         const broadcastUserListUpdate = (roomCode: string) => {
             const roomState = gameRooms.get(roomCode);
             if (roomState) {
@@ -104,7 +117,7 @@ export function initGameRoomSocket(server: any) {
                     lastName: p.lastName,
                     email: p.email,
                     avatar: p.avatar,
-                    roomRole: p.roomRole, // ZMIANA: Przesyłamy nową rolę
+                    roomRole: p.roomRole,
                 }));
                 io.to(roomCode).emit("update_room_users", { users: usersList });
             }
@@ -124,7 +137,14 @@ export function initGameRoomSocket(server: any) {
             io.to(roomCode).emit("update_active_monsters", Object.fromEntries(activeMonsters.entries()));
         };
 
-        // ZMIANA: Całkowicie przebudowany handler 'join_room'
+        const broadcastEventUpdate = (roomCode: string) => {
+            const event = activeEventByRoom.get(roomCode);
+            if (event) {
+                io.to(roomCode).emit("event_updated", event);
+            }
+        };
+
+        // Całkowicie przebudowany handler 'join_room'
         socket.on("join_room", (data: JoinRoomData) => {
             const { roomCode, userId } = data;
 
@@ -188,7 +208,7 @@ export function initGameRoomSocket(server: any) {
             broadcastActiveMonsters(roomCode);
         });
 
-        // NOWOŚĆ: Handler do przekazywania roli MPG
+        // Handler do przekazywania roli MPG
         socket.on("transfer_room_master", (data: { roomCode: string, newMasterUserId: string }) => {
             const { roomCode, newMasterUserId } = data;
             const roomState = gameRooms.get(roomCode);
@@ -217,7 +237,7 @@ export function initGameRoomSocket(server: any) {
             broadcastUserListUpdate(roomCode);
         });
 
-        // ZMIANA: Zmodyfikowany handler 'leave_room'
+        // Handler 'leave_room'
         socket.on("leave_room", (data: { roomCode: string; userId: string }) => {
             const { roomCode, userId } = data;
             if (socket.data.user._id.toString() !== userId) {
@@ -228,7 +248,7 @@ export function initGameRoomSocket(server: any) {
             socket.leave(roomCode);
         });
 
-        // ZMIANA: Zmodyfikowany handler 'delete_room'
+        // Handler 'delete_room'
         socket.on("delete_room", (data: { roomCode: string }) => {
             const { roomCode } = data;
             const roomState = gameRooms.get(roomCode);
@@ -254,7 +274,7 @@ export function initGameRoomSocket(server: any) {
             console.log(`Room ${roomCode} deleted by Room Master.`);
         });
 
-        // ZMIANA: Zmodyfikowany handler 'disconnect'
+        // Handler 'disconnect'
         socket.on("disconnect", () => {
             console.log("Socket disconnected: ", socket.id);
             // Iterujemy po wszystkich pokojach, w których był użytkownik
@@ -265,7 +285,7 @@ export function initGameRoomSocket(server: any) {
             });
         });
 
-        // NOWOŚĆ: Funkcja pomocnicza do obsługi wyjścia/rozłączenia użytkownika
+        // Funkcja pomocnicza do obsługi wyjścia/rozłączenia użytkownika
         const handleUserLeave = (socket: Socket, roomCode: string) => {
             const roomState = gameRooms.get(roomCode);
             if (!roomState) return;
@@ -434,6 +454,108 @@ export function initGameRoomSocket(server: any) {
                 socket.emit("error", { message: "Error selecting Monsters" });
             }
         });
+
+        // ===============================================
+        // NOWE HANDLERY ZDARZEŃ DLA EVENTÓW
+        // ===============================================
+
+        // 1. MPG informuje serwer o rozpoczęciu eventu
+        socket.on("start_event", async (data: StartEventData) => {
+            const { roomCode, event } = data;
+            const roomState = gameRooms.get(roomCode);
+
+            // Tylko MPG może rozpocząć event
+            if (!roomState || roomState.roomMasterId !== socket.id) {
+                return socket.emit("error", { message: "Only the Room Master can start an event." });
+            }
+
+            // Zapisz event jako aktywny dla tego pokoju
+            activeEventByRoom.set(roomCode, event);
+            console.log(`Event "${event.name}" started in room ${roomCode}`);
+
+            // Poinformuj wszystkich w pokoju o rozpoczęciu eventu
+            io.to(roomCode).emit("event_started", event);
+
+            // Jeśli to konflikt, poproś o rzuty na inicjatywę
+            if (event.type === 'Conflict') {
+                io.to(roomCode).emit("request_initiative_roll", { eventId: event._id });
+            }
+        });
+
+        // 2. Gracz przesyła swój wynik inicjatywy
+        socket.on("submit_initiative", async (data: SubmitInitiativeData) => {
+            const { roomCode, eventId, characterId, initiative } = data;
+            const event = activeEventByRoom.get(roomCode);
+
+            if (!event || event._id.toString() !== eventId) return;
+
+            // Znajdź uczestnika i zaktualizuj jego inicjatywę
+            const participant = event.participants.find(p => p.characterId.toString() === characterId);
+            if (participant) {
+                participant.initiative = initiative;
+            }
+
+            // Sprawdź, czy wszyscy rzucili na inicjatywę
+            const allHaveRolled = event.participants.every(p => typeof p.initiative === 'number');
+
+            if (allHaveRolled) {
+                // Posortuj uczestników malejąco po inicjatywie, aby ustalić kolejność
+                event.participants.sort((a, b) => (b.initiative ?? 0) - (a.initiative ?? 0));
+
+                // Zapisz posortowaną kolejność ID postaci
+                event.turnOrder = event.participants.map(p => p.characterId);
+                event.currentTurnIndex = 0;
+                event.status = 'Active';
+
+                console.log(`Turn order for event ${eventId} established.`);
+
+                // Zapisz zmiany w bazie danych
+                await Event.findByIdAndUpdate(eventId, {
+                    participants: event.participants,
+                    turnOrder: event.turnOrder,
+                    status: 'Active'
+                });
+            }
+
+            // Roześlij zaktualizowany stan eventu do wszystkich
+            broadcastEventUpdate(roomCode);
+        });
+
+        // 3. MPG prosi o przejście do następnej tury
+        socket.on("request_next_turn", async (data: { roomCode: string }) => {
+            const { roomCode } = data;
+            const event = activeEventByRoom.get(roomCode);
+            const roomState = gameRooms.get(roomCode);
+
+            if (!event || !roomState || roomState.roomMasterId !== socket.id) return;
+
+            // Przesuń wskaźnik tury, zapętlając go na końcu
+            event.currentTurnIndex = (event.currentTurnIndex + 1) % event.turnOrder.length;
+
+            await Event.findByIdAndUpdate(event._id, { currentTurnIndex: event.currentTurnIndex });
+
+            broadcastEventUpdate(roomCode);
+        });
+
+        // 4. MPG kończy event
+        socket.on("end_event", async (data: { roomCode: string }) => {
+            const { roomCode } = data;
+            const event = activeEventByRoom.get(roomCode);
+            const roomState = gameRooms.get(roomCode);
+
+            if (!event || !roomState || roomState.roomMasterId !== socket.id) return;
+
+            // Zaktualizuj status w bazie danych
+            await Event.findByIdAndUpdate(event._id, { status: 'Resolved' });
+
+            // Usuń event z pamięci serwera
+            activeEventByRoom.delete(roomCode);
+
+            // Poinformuj klientów o zakończeniu eventu
+            io.to(roomCode).emit("event_ended", { eventId: event._id });
+            console.log(`Event "${event.name}" ended in room ${roomCode}`);
+        });
+
     });
 
     return io;
