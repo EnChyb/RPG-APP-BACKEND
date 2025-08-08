@@ -8,9 +8,9 @@ import { setupSwagger } from "./config/swagger.js"; // Import Swaggera
 import authRouter from "./routes/authRoutes.js";
 import characterRoutes from "./routes/characterRoutes.js";
 import dataRoutes from "./routes/dataRoutes.js";
+import eventRouter from "./routes/eventRoutes.js";
 
 const app = express();
-
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 
 app.use(morgan(formatsLogger));
@@ -38,6 +38,7 @@ setupSwagger(app); // 🔥 Dodaj Swaggera tutaj
 app.use("/api/auth", authRouter);
 app.use("/api/characters", characterRoutes);
 app.use("/api/data", dataRoutes);
+app.use("/api/events", eventRouter);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: "Not found" });
