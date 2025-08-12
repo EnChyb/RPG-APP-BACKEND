@@ -3,7 +3,7 @@ import { RequestHandler, Response, NextFunction } from "express";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
 import Event, { IEventParticipant } from "../../models/Event.js";
 import Character from "../../models/Character.js";
-import mongoose from "mongoose";
+// import mongoose from "mongoose";
 
 interface CreateEventBody {
     name: string;
@@ -35,9 +35,12 @@ export const createEvent: RequestHandler = async (
 
     try {
         const characterIds = participantInputs.map(p => p.characterId);
+        // const characters = await Character.find({
+        //     '_id': { $in: characterIds }
+        // }).lean();
         const characters = await Character.find({
             '_id': { $in: characterIds }
-        }).lean();
+        });
 
         if (characters.length !== characterIds.length) {
             res.status(404).json({ message: "One or more characters not found." });
@@ -50,8 +53,8 @@ export const createEvent: RequestHandler = async (
                 throw new Error(`Character with id ${input.characterId} not found after initial fetch.`);
             }
             return {
-                characterId: new mongoose.Types.ObjectId(character._id), // Jawna konwersja
-                // characterId: character._id,
+                // characterId: new mongoose.Types.ObjectId(character._id), // Jawna konwersja
+                characterId: character._id,
                 characterName: character.name,
                 characterAvatar: character.avatar,
                 characterType: character.characterType,
