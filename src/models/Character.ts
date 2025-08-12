@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 import { TalentSchema, ITalent } from "./Talent.js";
 import { WeaponSchema, IWeapon } from "./Weapon.js";
 import { ArmorSchema, IArmor } from "./Armor.js";
@@ -21,7 +21,8 @@ export interface ISkill {
 }
 
 export interface ICharacter extends Document {
-  _id: string;
+  // _id: string;
+  _id: Types.ObjectId;
   avatar: string;
   name: string;
   characterType: "Hero" | "NPC" | "Monster";
@@ -85,7 +86,7 @@ const CharacterSchema = new Schema<ICharacter>(
       default: "Hero",
       required: true,
     },
-    archetype: { type: String},
+    archetype: { type: String },
     race: { type: String },
     species: { type: String },
     avatar: { type: String, default: "../assets/img/avatar-placeholder.png" },
