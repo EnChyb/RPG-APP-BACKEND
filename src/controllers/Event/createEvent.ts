@@ -15,7 +15,6 @@ interface CreateEventBody {
     }>;
 }
 
-// Poprawiono sygnaturę funkcji, aby była zgodna z typem RequestHandler
 export const createEvent: RequestHandler = async (
     req: AuthenticatedRequest,
     res: Response,
@@ -25,7 +24,6 @@ export const createEvent: RequestHandler = async (
     const userId = req.user?.id;
 
     if (!userId) {
-        // Używamy `res.status().json()` i `return`, aby zakończyć wykonanie funkcji
         res.status(401).json({ message: "Unauthorized: User not found." });
         return;
     }
@@ -46,7 +44,6 @@ export const createEvent: RequestHandler = async (
             return;
         }
 
-        // Upewniamy się, że `characterId` jest typu ObjectId
         const eventParticipants: IEventParticipant[] = participantInputs.map(input => {
             const character = characters.find(c => c._id.toString() === input.characterId);
             if (!character) {
@@ -54,10 +51,12 @@ export const createEvent: RequestHandler = async (
             }
             return {
                 characterId: new mongoose.Types.ObjectId(character._id), // Jawna konwersja
+                // characterId: character._id,
                 characterName: character.name,
                 characterAvatar: character.avatar,
                 characterType: character.characterType,
-                ownerId: new mongoose.Types.ObjectId(character.owner), // Jawna konwersja
+                // ownerId: new mongoose.Types.ObjectId(character.owner), // Jawna konwersja
+                ownerId: character.owner, // Przekazujemy ObjectId bezpośrednio
                 side: input.side,
                 status: 'Active',
             };
@@ -67,7 +66,8 @@ export const createEvent: RequestHandler = async (
             name,
             type,
             roomCode,
-            createdBy: new mongoose.Types.ObjectId(userId),
+            // createdBy: new mongoose.Types.ObjectId(userId),
+            createdBy: userId, // Przekazujemy string, Mongoose dokona konwersji
             status: 'Pending',
             participants: eventParticipants,
         });
@@ -77,6 +77,7 @@ export const createEvent: RequestHandler = async (
         res.status(201).json(newEvent);
 
     } catch (error) {
+        console.error("Error creating event:", error);
         next(error);
     }
 };
