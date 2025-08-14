@@ -96,7 +96,6 @@ export function initGameRoomSocket(server: any) {
 
     //  Główna struktura do zarządzania stanem wszystkich pokoi gry
     const gameRooms: Map<string, GameRoomState> = new Map();
-    // Poniższe struktury pozostają bez zmian
     const activeCardsByRoom: Map<string, Map<string, HeroCardFull>> = new Map();
     const activeNpcsByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
     const activeMonstersByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
@@ -499,24 +498,61 @@ export function initGameRoomSocket(server: any) {
             const allHaveRolled = event.participants.every(p => typeof p.initiative === 'number');
 
             if (allHaveRolled) {
-                // Posortuj uczestników malejąco po inicjatywie, aby ustalić kolejność
-                event.participants.sort((a, b) => (b.initiative ?? 0) - (a.initiative ?? 0));
+                console.log(`All participants have rolled initiative for event ${eventId}. Sorting...`);
+                // 1. Pobieranie pełne dane postaci, aby mieć dostęp do statystyk
+                const charIds = event.participants.map(p => p.characterId);
+                const characters = await Character.find({ '_id': { $in: charIds } }).lean();
 
-                // Zapisz posortowaną kolejność ID postaci
+                // 2. Stworzenie mapy statystyk dla łatwego dostępu
+                const statsMap = new Map(characters.map(c => [
+                    c._id.toString(),
+                    {
+                        move: c.skills.Move?.value ?? 0,
+                        agility: c.attributes.Agility.value,
+                        type: c.characterType,
+                    }
+                ]));
+                // 3. Sortowanie uczestników malejąco po inicjatywie, aby ustalić kolejność
+                event.participants.sort((a, b) => {
+                    // Kryterium 1: Inicjatywa (im niższa, tym lepiej)
+                    const initiativeDiff = (a.initiative ?? 99) - (b.initiative ?? 99);
+                    if (initiativeDiff !== 0) return initiativeDiff;
+
+                    const statsA = statsMap.get(a.characterId.toString());
+                    const statsB = statsMap.get(b.characterId.toString());
+                    if (!statsA || !statsB) return 0;
+
+                    // Kryterium 2: Umiejętność Move (im wyższa, tym lepiej)
+                    const moveDiff = statsB.move - statsA.move;
+                    if (moveDiff !== 0) return moveDiff;
+
+                    // Kryterium 3: Atrybut Agility (im wyższy, tym lepiej)
+                    const agilityDiff = statsB.agility - statsA.agility;
+                    if (agilityDiff !== 0) return agilityDiff;
+
+                    // Kryterium 4: Typ postaci (Hero > NPC > Monster)
+                    const typeOrder = { 'Hero': 1, 'NPC': 2, 'Monster': 3 };
+                    const typeDiff = typeOrder[statsA.type] - typeOrder[statsB.type];
+                    if (typeDiff !== 0) return typeDiff;
+
+                    // Kryterium 5: Losowo
+                    return Math.random() - 0.5;
+                });
+
+                // Zapisuje posortowaną kolejność ID postaci
                 event.turnOrder = event.participants.map(p => p.characterId);
                 event.currentTurnIndex = 0;
                 event.status = 'Active';
 
-                console.log(`Turn order for event ${eventId} established.`);
+                console.log(`Turn order established:`, event.turnOrder.map(id => id.toString()));
 
-                // Zapisz zmiany w bazie danych
+                // Zapisuje zmiany w bazie danych
                 await Event.findByIdAndUpdate(eventId, {
                     participants: event.participants,
                     turnOrder: event.turnOrder,
                     status: 'Active'
                 });
             }
-
             // Roześlij zaktualizowany stan eventu do wszystkich
             broadcastEventUpdate(roomCode);
         });
