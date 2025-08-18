@@ -24,6 +24,8 @@ export interface IEvent extends Document {
     participants: IEventParticipant[];
     turnOrder: Types.ObjectId[]; // Posortowana lista characterId według inicjatywy
     currentTurnIndex: number; // Indeks w tablicy turnOrder wskazujący na aktualną turę
+    round: number; // Runda (5-10 sekund)
+    turn: number;  // Tura (5-10 minut)
     createdAt: Date;
     updatedAt: Date;
 }
@@ -51,6 +53,8 @@ const EventSchema = new Schema<IEvent>(
         participants: [EventParticipantSchema],
         turnOrder: [{ type: Schema.Types.ObjectId, ref: "Character" }],
         currentTurnIndex: { type: Number, default: 0 },
+        round: { type: Number, default: 1 }, // ZMIANA: Runda
+        turn: { type: Number, default: 1 },  // ZMIANA: Tura
     },
     { timestamps: true }
 );
