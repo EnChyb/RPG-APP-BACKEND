@@ -557,7 +557,34 @@ export function initGameRoomSocket(server: any) {
             broadcastEventUpdate(roomCode);
         });
 
-        // 3. MPG prosi o przejście do następnej tury
+        // 3. MPG prosi o przejście do następnej RUNDY
+        socket.on("request_next_round", async (data: { roomCode: string }) => {
+            const { roomCode } = data;
+            const event = activeEventByRoom.get(roomCode);
+            const roomState = gameRooms.get(roomCode);
+
+            if (!event || !roomState || roomState.roomMasterId !== socket.id) return;
+
+            // Przesuń wskaźnik tury postaci, zapętlając go na końcu
+            const nextIndex = (event.currentTurnIndex + 1);
+
+            // Jeśli wskaźnik przekroczy liczbę uczestników, zaczynamy nową rundę
+            if (nextIndex >= event.turnOrder.length) {
+                event.round += 1;
+                event.currentTurnIndex = 0;
+            } else {
+                event.currentTurnIndex = nextIndex;
+            }
+
+            await Event.findByIdAndUpdate(event._id, {
+                round: event.round,
+                currentTurnIndex: event.currentTurnIndex
+            });
+
+            broadcastEventUpdate(roomCode);
+        });
+
+        // 4. MPG prosi o przejście do następnej TURY
         socket.on("request_next_turn", async (data: { roomCode: string }) => {
             const { roomCode } = data;
             const event = activeEventByRoom.get(roomCode);
@@ -565,15 +592,22 @@ export function initGameRoomSocket(server: any) {
 
             if (!event || !roomState || roomState.roomMasterId !== socket.id) return;
 
-            // Przesuń wskaźnik tury, zapętlając go na końcu
-            event.currentTurnIndex = (event.currentTurnIndex + 1) % event.turnOrder.length;
+            // Zwiększ numer tury
+            event.turn += 1;
+            // Zresetuj numer rundy i wskaźnik kolejki
+            event.round = 1;
+            event.currentTurnIndex = 0;
 
-            await Event.findByIdAndUpdate(event._id, { currentTurnIndex: event.currentTurnIndex });
+            await Event.findByIdAndUpdate(event._id, {
+                turn: event.turn,
+                round: event.round,
+                currentTurnIndex: event.currentTurnIndex,
+            });
 
             broadcastEventUpdate(roomCode);
         });
 
-        // 4. MPG kończy event
+        // 5. MPG kończy event
         socket.on("end_event", async (data: { roomCode: string }) => {
             const { roomCode } = data;
             const event = activeEventByRoom.get(roomCode);
