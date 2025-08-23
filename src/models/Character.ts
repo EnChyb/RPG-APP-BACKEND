@@ -67,6 +67,12 @@ export interface ICharacter extends Document {
     armor: IArmor[];
     gears: IGear[];
   };
+  chest: {
+  weapons: IWeapon[],
+  armor: IArmor[],
+  gears: IGear[],
+},
+
   GameMaster: string;
   owner: mongoose.Types.ObjectId;
   createdAt: Date;
@@ -172,6 +178,21 @@ const CharacterSchema = new Schema<ICharacter>(
       default: [],
     },
     items: {
+      weapons: {
+        type: [WeaponSchema
+        ],
+        default: [],
+      },
+      armor: {
+        type: [ArmorSchema],
+        default: [],
+      },
+      gears: {
+        type: [GearSchema],
+        default: [],
+      },
+    },
+    chest: {
       weapons: {
         type: [WeaponSchema
         ],
