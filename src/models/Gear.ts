@@ -19,6 +19,7 @@ export interface IGear extends Document {
     pl: string;
     en: string;
   };
+  price: number;
   createdByUser: boolean;
 }
 
@@ -40,6 +41,7 @@ export const GearSchema: Schema = new Schema({
     pl: { type: String },
     en: { type: String },
   },
+  price: { type: Number, required: true, default: 0 },
   createdByUser: { type: Boolean, default: false },
 });
 

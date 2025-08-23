@@ -6,10 +6,11 @@ import Gear from "../models/Gear.js";
 import Race from "../models/Race.js"
 import Archetype from "../models/Archetype.js";
 import Species from "../models/Species.js";
+import DiscardedItem from "../models/DiscardedItem.js";
 
-const router = express.Router();
+const dataRouter = express.Router();
 
-router.get("/races", async (_req, res) => {
+dataRouter.get("/races", async (_req, res) => {
   try {
     const races = await Race.find();
     res.json(races);
@@ -18,7 +19,7 @@ router.get("/races", async (_req, res) => {
   }
 });
 
-router.get("/archetypes", async (_req, res) => {
+dataRouter.get("/archetypes", async (_req, res) => {
   try {
     const archetypes = await Archetype.find();
     res.json(archetypes);
@@ -27,7 +28,7 @@ router.get("/archetypes", async (_req, res) => {
   }
 });
 
-router.get("/talents", async (_req, res) => {
+dataRouter.get("/talents", async (_req, res) => {
   try {
     const talents = await Talent.find();
     res.json(talents);
@@ -36,7 +37,7 @@ router.get("/talents", async (_req, res) => {
   }
 });
 
-router.get("/weapons", async (_req, res) => {
+dataRouter.get("/weapons", async (_req, res) => {
   try {
     const weapons = await Weapon.find();
     res.json(weapons);
@@ -45,7 +46,7 @@ router.get("/weapons", async (_req, res) => {
   }
 });
 
-router.get("/armor", async (_req, res) => {
+dataRouter.get("/armor", async (_req, res) => {
   try {
     const armor = await Armor.find();
     res.json(armor);
@@ -54,7 +55,7 @@ router.get("/armor", async (_req, res) => {
   }
 });
 
-router.get("/gear", async (_req, res) => {
+dataRouter.get("/gear", async (_req, res) => {
   try {
     const gears = await Gear.find();
     res.json(gears);
@@ -63,7 +64,7 @@ router.get("/gear", async (_req, res) => {
   }
 });
 
-router.get("/species", async (_req, res) => {
+dataRouter.get("/species", async (_req, res) => {
   try {
     const species = await Species.find();
     res.json(species);
@@ -72,4 +73,48 @@ router.get("/species", async (_req, res) => {
   }
 });
 
-export default router;
+dataRouter.post("/discard", async (req, res) => {
+  try {
+    const { type, item, fromCharacterId } = req.body;
+
+    const discarded = new DiscardedItem({
+      type,
+      item,
+      fromCharacterId,
+    });
+
+    await discarded.save();
+    res.status(201).json(discarded);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to discard item" });
+  }
+});
+
+dataRouter.get("/discarded", async (req, res) => {
+  try {
+    const discarded = await DiscardedItem.find().sort({ createdAt: -1 });
+    res.json(discarded);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch discarded items" });
+  }
+});
+
+dataRouter.post(
+  "/pickup/:id",
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const item = await DiscardedItem.findByIdAndDelete(id);
+
+      if (!item) {
+        return res.status(404).json({ error: "Item not found" });
+      }
+
+      res.status(200).json({ item });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to pick up item" });
+    }
+  }
+);
+
+export default dataRouter;

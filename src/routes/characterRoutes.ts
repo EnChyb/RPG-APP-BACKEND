@@ -9,6 +9,7 @@ import {
 } from "../controllers/Character/index.js";
 import protect from "../middlewares/authMiddleware.js";
 import uploadAvatar  from "../middlewares/avatarMiddleware.js";
+// import editEquipmentRoutes from "./editEquipment.js";
 
 const router = express.Router();
 
@@ -254,5 +255,7 @@ router.patch("/:id", protect, uploadAvatar, updateCharacter);
  */
 router.delete("/:id", protect, deleteCharacter);
 router.post("/upload-avatar", protect, uploadAvatar, uploadAvatarOnly);
+// router.use("/:id/equipment", editEquipmentRoutes);
+
 
 export default router;
