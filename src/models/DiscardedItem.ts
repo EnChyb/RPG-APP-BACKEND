@@ -16,7 +16,7 @@ interface DiscardedItemDocument extends Document {
 const DiscardedItemSchema = new Schema<DiscardedItemDocument>({
   type: {
     type: String,
-    enum: ["weapons", "armor", "gear"],
+    enum: ["weapons", "armor", "gears"],
     required: true,
   },
   item: {

@@ -70,7 +70,7 @@ export interface ICharacter extends Document {
   chest: {
   weapons: IWeapon[],
   armor: IArmor[],
-  gear: IGear[],
+  gears: IGear[],
 },
 
   GameMaster: string;

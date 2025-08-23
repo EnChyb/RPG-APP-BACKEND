@@ -9,6 +9,7 @@ import authRouter from "./routes/authRoutes.js";
 import characterRoutes from "./routes/characterRoutes.js";
 import dataRouter from "./routes/dataRoutes.js";
 import eventRouter from "./routes/eventRoutes.js";
+import editEquipmentRoutes from "./routes/editEquipment.js";
 
 const app = express();
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
@@ -39,6 +40,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/characters", characterRoutes);
 app.use("/api/data", dataRouter);
 app.use("/api/events", eventRouter);
+app.use("/api", editEquipmentRoutes);
 
 app.use((req: Request, res: Response) => {
   res.status(404).json({ message: "Not found" });
