@@ -29,6 +29,15 @@ export const getCharacter: RequestHandler = async (
       };
     }) ?? [];
 
+    const cleanedChestWeapons = character.chest?.weapons?.map((weapon) => {
+  const { _id, ...rest } = weapon;
+  return {
+    ...rest,
+    hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined),
+  };
+}) ?? [];
+
+
     const orderedCharacter = {
       _id: character._id,
       name: character.name,
@@ -60,6 +69,12 @@ export const getCharacter: RequestHandler = async (
         weapons: cleanedWeapons,
         armor: cleanItems(character.items?.armor),
         gears: cleanItems(character.items?.gears),
+      },
+
+      chest: {
+        weapons: cleanedChestWeapons,
+        armor: cleanItems(character.chest?.armor),
+        gears: cleanItems(character.chest?.gears),
       },
 
       GameMaster: character.GameMaster,

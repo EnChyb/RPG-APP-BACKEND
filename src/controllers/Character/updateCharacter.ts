@@ -149,18 +149,14 @@ if (updates.avatar) {
     }
 
     if (updates.items) {
-      character.items = {
-        weapons: Array.isArray(updates.items.weapons) && updates.items.weapons.length > 0
-          ? updates.items.weapons
-          : character.items.weapons,
-        armor: Array.isArray(updates.items.armor) && updates.items.armor.length > 0
-          ? updates.items.armor
-          : character.items.armor,
-        gears: Array.isArray(updates.items.gears) && updates.items.gears.length > 0
-          ? updates.items.gears
-          : character.items.gears,
-      };
-    }
+  const cleanItems = {
+    weapons: (Array.isArray(updates.items.weapons) ? updates.items.weapons.filter(Boolean) : character.items.weapons),
+    armor: (Array.isArray(updates.items.armor) ? updates.items.armor.filter(Boolean) : character.items.armor),
+    gears: (Array.isArray(updates.items.gears) ? updates.items.gears.filter(Boolean) : character.items.gears),
+  };
+
+  character.items = cleanItems;
+}
     
 
     await character.save();
