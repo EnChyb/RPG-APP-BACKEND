@@ -17,25 +17,42 @@ export const getCharacter: RequestHandler = async (
       return;
     }
 
+    // ✅ Helper to convert _id to string
+    const normalizeId = (arr: any[] = []) =>
+      arr.map((item) => ({
+        ...item,
+        _id: item._id?.toString?.(),
+      }));
+
+      // ✅ Add 'hand' fallback for weapons (if missing)
+    const normalizeWeapons = (arr: any[] = []) =>
+      arr.map((weapon) => ({
+        ...weapon,
+        _id: weapon._id?.toString?.(),
+        hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined),
+      }));
+
+
     // Clean helper to remove _id while preserving hand
-    const cleanItems = (items: any[]) =>
-      items?.map(({ _id, ...rest }) => rest) ?? [];
+    // const cleanItems = (items: any[]) =>
+    //   items?.map(({ _id, ...rest }) => rest) ?? [];
 
-    const cleanedWeapons = character.items?.weapons?.map((weapon) => {
-      const { _id, ...rest } = weapon;
-      return {
-        ...rest,
-        hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined), // preserve or infer 'hand'
-      };
-    }) ?? [];
+//     const cleanedWeapons = character.items?.weapons?.map((weapon) => {
+//       const { _id, ...rest } = weapon;
+//       return {
+//         ...rest,
+//         hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined), // preserve or infer 'hand'
+//       };
+//     }) ?? [];
 
-    const cleanedChestWeapons = character.chest?.weapons?.map((weapon) => {
-  const { _id, ...rest } = weapon;
-  return {
-    ...rest,
-    hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined),
-  };
-}) ?? [];
+//     const cleanedChestWeapons = character.chest?.weapons?.map((weapon) => {
+//   const { _id, ...rest } = weapon;
+//   return {
+//     ...rest,
+//     hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined),
+//   };
+// }) ?? [];
+
 
 
     const orderedCharacter = {
@@ -62,19 +79,19 @@ export const getCharacter: RequestHandler = async (
       states: character.states,
 
       skills: character.skills,
-      additionalSkills: cleanItems(character.additionalSkills),
-      talents: cleanItems(character.talents),
+      additionalSkills: normalizeId(character.additionalSkills),
+      talents: normalizeId(character.talents),
 
       items: {
-        weapons: cleanedWeapons,
-        armor: cleanItems(character.items?.armor),
-        gears: cleanItems(character.items?.gears),
+        weapons: normalizeWeapons,
+        armor: normalizeId(character.items?.armor),
+        gears: normalizeId(character.items?.gears),
       },
 
       chest: {
-        weapons: cleanedChestWeapons,
-        armor: cleanItems(character.chest?.armor),
-        gears: cleanItems(character.chest?.gears),
+        weapons: normalizeWeapons,
+        armor: normalizeId(character.chest?.armor),
+        gears: normalizeId(character.chest?.gears),
       },
 
       GameMaster: character.GameMaster,
