@@ -157,7 +157,16 @@ if (updates.avatar) {
 
   character.items = cleanItems;
 }
-    
+
+if (updates.chest) {
+  const cleanChest = {
+    weapons: (Array.isArray(updates.chest.weapons) ? updates.chest.weapons.filter(Boolean) : character.chest.weapons),
+    armor: (Array.isArray(updates.chest.armor) ? updates.chest.armor.filter(Boolean) : character.chest.armor),
+    gears: (Array.isArray(updates.chest.gears) ? updates.chest.gears.filter(Boolean) : character.chest.gears),
+  };
+
+  character.chest = cleanChest;
+}
 
     await character.save();
 
@@ -185,6 +194,7 @@ if (updates.avatar) {
         additionalSkills: character.additionalSkills,
         talents: character.talents,
         items: character.items,
+        chest: character.chest,
         GameMaster: character.GameMaster,
         owner: character.owner,
         createdAt: character.createdAt,
