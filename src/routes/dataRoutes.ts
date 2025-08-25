@@ -1,4 +1,4 @@
-import express from "express";
+import express, { RequestHandler } from "express";
 import Talent from "../models/Talent.js";
 import Weapon from "../models/Weapon.js";
 import Armor from "../models/Armor.js";
@@ -99,22 +99,19 @@ dataRouter.get("/discarded", async (req, res) => {
   }
 });
 
-dataRouter.post(
-  "/pickup/:id",
-  async (req, res) => {
-    try {
-      const { id } = req.params;
-      const item = await DiscardedItem.findByIdAndDelete(id);
+dataRouter.post("/pickup/:id", (async (req, res) => {
+  try {
+    const { id } = req.params;
+    const item = await DiscardedItem.findByIdAndDelete(id);
 
-      if (!item) {
-        return res.status(404).json({ error: "Item not found" });
-      }
-
-      res.status(200).json({ item });
-    } catch (error) {
-      res.status(500).json({ error: "Failed to pick up item" });
+    if (!item) {
+      return res.status(404).json({ error: "Item not found" });
     }
+
+    res.status(200).json({ item });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to pick up item" });
   }
-);
+}) as RequestHandler);
 
 export default dataRouter;
