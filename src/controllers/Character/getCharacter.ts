@@ -24,7 +24,7 @@ export const getCharacter: RequestHandler = async (
         _id: item._id?.toString?.(),
       }));
 
-      // ✅ Add 'hand' fallback for weapons (if missing)
+    // ✅ Add 'hand' fallback for weapons (if missing)
     const normalizeWeapons = (arr: any[] = []) =>
       arr.map((weapon) => ({
         ...weapon,
@@ -37,21 +37,21 @@ export const getCharacter: RequestHandler = async (
     // const cleanItems = (items: any[]) =>
     //   items?.map(({ _id, ...rest }) => rest) ?? [];
 
-//     const cleanedWeapons = character.items?.weapons?.map((weapon) => {
-//       const { _id, ...rest } = weapon;
-//       return {
-//         ...rest,
-//         hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined), // preserve or infer 'hand'
-//       };
-//     }) ?? [];
+    //     const cleanedWeapons = character.items?.weapons?.map((weapon) => {
+    //       const { _id, ...rest } = weapon;
+    //       return {
+    //         ...rest,
+    //         hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined), // preserve or infer 'hand'
+    //       };
+    //     }) ?? [];
 
-//     const cleanedChestWeapons = character.chest?.weapons?.map((weapon) => {
-//   const { _id, ...rest } = weapon;
-//   return {
-//     ...rest,
-//     hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined),
-//   };
-// }) ?? [];
+    //     const cleanedChestWeapons = character.chest?.weapons?.map((weapon) => {
+    //   const { _id, ...rest } = weapon;
+    //   return {
+    //     ...rest,
+    //     hand: weapon.hand ?? (weapon.grip === 2 ? "both" : undefined),
+    //   };
+    // }) ?? [];
 
 
 
@@ -83,13 +83,15 @@ export const getCharacter: RequestHandler = async (
       talents: normalizeId(character.talents),
 
       items: {
-        weapons: normalizeWeapons,
+        // weapons: normalizeWeapons,
+        weapons: normalizeWeapons(character.items?.weapons),
         armor: normalizeId(character.items?.armor),
         gears: normalizeId(character.items?.gears),
       },
 
       chest: {
-        weapons: normalizeWeapons,
+        // weapons: normalizeWeapons,
+        weapons: normalizeWeapons(character.chest?.weapons),
         armor: normalizeId(character.chest?.armor),
         gears: normalizeId(character.chest?.gears),
       },

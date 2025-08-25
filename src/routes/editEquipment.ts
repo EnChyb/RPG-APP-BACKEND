@@ -1,11 +1,12 @@
 // routes/editEquipment.ts
-import express, { Request, Response } from "express";
+import express, { RequestHandler } from "express";
 import Character from "../models/Character.js";
 import DiscardedItem from "../models/DiscardedItem.js";
 import Weapon, { IWeapon } from "../models/Weapon.js";
 import Armor, { IArmor } from "../models/Armor.js";
 import Gear, { IGear } from "../models/Gear.js";
 import protect from "../middlewares/authMiddleware.js";
+import { AuthenticatedRequest } from "../middlewares/authMiddleware.js";
 
 const router = express.Router({ mergeParams: true });
 
@@ -14,12 +15,11 @@ type SourceLocation = "items" | "chest";
 type EquipmentItem = IWeapon | IArmor | IGear;
 
 // PATCH: Move equipped item to chest
-router.patch("/character/:id/move-to-chest", protect, async (req: Request, res: Response) => {
+// router.patch("/character/:id/move-to-chest", protect, async (req: Request, res: Response) => {
+router.patch("/character/:id/move-to-chest", protect, (async (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
   console.log("Character ID:", req.params.id);
-  
   const { type, index } = req.body as { type: EquipmentCategory; index: number };
-
 
   try {
     const character = await Character.findById(id);
@@ -39,10 +39,11 @@ router.patch("/character/:id/move-to-chest", protect, async (req: Request, res: 
   } catch (err) {
     res.status(500).json({ error: "Failed to move item to chest" });
   }
-});
+}) as RequestHandler);
 
 // PATCH: Equip from chest to active items
-router.patch("/character/:id/equip-from-chest", protect, async (req: Request, res: Response) => {
+// router.patch("/character/:id/equip-from-chest", protect, async (req: Request, res: Response) => {
+router.patch("/character/:id/equip-from-chest", protect, (async (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
   const { type, index } = req.body as { type: EquipmentCategory; index: number };
 
@@ -64,10 +65,11 @@ router.patch("/character/:id/equip-from-chest", protect, async (req: Request, re
   } catch (err) {
     res.status(500).json({ error: "Failed to equip item from chest" });
   }
-});
+}) as RequestHandler);
 
 // PATCH: Discard from inventory (items or chest)
-router.patch("/character/:id/discard-from-inventory", protect, async (req: Request, res: Response) => {
+// router.patch("/character/:id/discard-from-inventory", protect, async (req: Request, res: Response) => {
+router.patch("/character/:id/discard-from-inventory", protect, (async (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
   const { source, type, index } = req.body as {
     source: SourceLocation;
@@ -92,10 +94,11 @@ router.patch("/character/:id/discard-from-inventory", protect, async (req: Reque
   } catch (err) {
     res.status(500).json({ error: "Failed to discard item" });
   }
-});
+}) as RequestHandler);
 
 // POST: Buy item from shop
-router.post("/character/:id/buy", protect, async (req: Request, res: Response) => {
+// router.post("/character/:id/buy", protect, async (req: Request, res: Response) => {
+router.post("/character/:id/buy", protect, (async (req: AuthenticatedRequest, res) => {
   const { id } = req.params;
   const { type, itemId } = req.body as { type: EquipmentCategory; itemId: string };
 
@@ -105,7 +108,8 @@ router.post("/character/:id/buy", protect, async (req: Request, res: Response) =
     const character = await Character.findById(id);
     if (!character) return res.status(404).json({ message: "Character not found" });
 
-    let item: EquipmentItem | null = null;
+    // let item: EquipmentItem | null = null;
+    let item: (EquipmentItem & { price?: number }) | null = null;
 
     switch (type) {
       case "weapons":
@@ -150,6 +154,6 @@ router.post("/character/:id/buy", protect, async (req: Request, res: Response) =
   } catch (err) {
     res.status(500).json({ error: "Failed to buy item" });
   }
-});
+}) as RequestHandler);
 
 export default router;
