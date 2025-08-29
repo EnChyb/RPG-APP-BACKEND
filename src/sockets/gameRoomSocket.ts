@@ -99,7 +99,8 @@ export function initGameRoomSocket(server: any) {
 
     //  Główna struktura do zarządzania stanem wszystkich pokoi gry
     const gameRooms: Map<string, GameRoomState> = new Map();
-    const activeCardsByRoom: Map<string, Map<string, HeroCardFull>> = new Map();
+    // const activeCardsByRoom: Map<string, Map<string, HeroCardFull>> = new Map();
+    const activeCardsByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
     const activeNpcsByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
     const activeMonstersByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
     const activeEventByRoom: Map<string, IEvent> = new Map();
@@ -395,11 +396,33 @@ export function initGameRoomSocket(server: any) {
                     age: character.age?.en || 'Adult',
                 };
 
-                roomCards.set(userId, cardData);
+                // roomCards.set(userId, cardData);
+                roomCards.set(userId, [cardData]);
                 broadcastActiveCards(roomCode);
             } catch (error) {
                 console.error("Error selecting character:", error);
                 socket.emit("error", { message: "Error selecting character" });
+            }
+        });
+
+        // --- Nowy handler dla wyboru wielu bohaterów przez MPG ---
+        socket.on("select_active_heroes", async (data: { roomCode: string; characterIds: string[] }) => {
+            const { roomCode, characterIds } = data;
+            const userId = socket.data.user._id.toString();
+            const roomCards = activeCardsByRoom.get(roomCode);
+            if (!roomCards) return;
+
+            try {
+                const characters = await Character.find({ '_id': { $in: characterIds }, characterType: 'Hero' }).lean();
+                const cardData: HeroCardFull[] = characters.map(c => ({
+                    _id: c._id.toString(), name: c.name, avatar: c.avatar,
+                    race: c.race || '', archetype: c.archetype || '', species: c.species || '',
+                    characterType: c.characterType, age: c.age?.en || 'Adult',
+                }));
+                roomCards.set(userId, cardData);
+                broadcastActiveCards(roomCode);
+            } catch (error) {
+                socket.emit("error", { message: "Error selecting Heroes" });
             }
         });
 
@@ -458,7 +481,7 @@ export function initGameRoomSocket(server: any) {
         });
 
         // ===============================================
-        // NOWE HANDLERY ZDARZEŃ DLA EVENTÓW
+        // HANDLERY ZDARZEŃ DLA EVENTÓW
         // ===============================================
 
         // 1. MPG informuje serwer o rozpoczęciu eventu
