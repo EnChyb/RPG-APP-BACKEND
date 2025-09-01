@@ -11,6 +11,11 @@ export interface IEventParticipant {
     side: 'A' | 'B'; // Strona A (np. gracze) i strona B (np. wrogowie)
     initiative?: number; // Wynik rzutu na inicjatywę (opcjonalny)
     status: 'Active' | 'Defeated'; // Status postaci w evencie
+    // NOWOŚĆ: Dodane pola do śledzenia akcji i reakcji
+    mainActions: number;
+    fastActions: number;
+    specialActions: number;
+    canReact: boolean;
 }
 
 // Główny interfejs dla dokumentu Event
@@ -40,6 +45,11 @@ const EventParticipantSchema = new Schema<IEventParticipant>({
     side: { type: String, enum: ['A', 'B'], required: true },
     initiative: { type: Number },
     status: { type: String, enum: ['Active', 'Defeated'], default: 'Active' },
+    // NOWOŚĆ: Dodane definicje w schemie
+    mainActions: { type: Number, default: 1 },
+    fastActions: { type: Number, default: 1 },
+    specialActions: { type: Number, default: 0 },
+    canReact: { type: Boolean, default: false },
 }, { _id: false }); // _id: false, bo to subdokument
 
 // Główna Schema dla Eventu
