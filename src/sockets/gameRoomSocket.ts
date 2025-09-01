@@ -602,9 +602,20 @@ export function initGameRoomSocket(server: any) {
                 event.currentTurnIndex = nextIndex;
             }
 
+            // NOWOŚĆ: Resetuj akcje dla nowej aktywnej postaci i możliwość reakcji dla wszystkich
+            event.participants.forEach((p) => {
+                const isNowActive = event.turnOrder[event.currentTurnIndex].toString() === p.characterId.toString();
+                if (isNowActive) {
+                    p.mainActions = 1;
+                    p.fastActions = 1;
+                }
+                p.canReact = false;
+            });
+
             await Event.findByIdAndUpdate(event._id, {
                 round: event.round,
-                currentTurnIndex: event.currentTurnIndex
+                currentTurnIndex: event.currentTurnIndex,
+                participants: event.participants, // Zapisz zaktualizowanych uczestników
             });
 
             broadcastEventUpdate(roomCode);
@@ -650,6 +661,79 @@ export function initGameRoomSocket(server: any) {
             // Poinformuj klientów o zakończeniu eventu
             io.to(roomCode).emit("event_ended", { eventId: event._id });
             console.log(`Event "${event.name}" ended in room ${roomCode}`);
+        });
+
+        // NOWOŚĆ: Gracz informuje o wybranych celach do reakcji
+        socket.on("select_targets_for_reaction", async (data: { roomCode: string; eventId: string; targetCharacterIds: string[] }) => {
+            const { roomCode, eventId, targetCharacterIds } = data;
+            const event = activeEventByRoom.get(roomCode);
+
+            if (!event || event._id.toString() !== eventId) return;
+
+            event.participants.forEach(p => {
+                p.canReact = targetCharacterIds.includes(p.characterId.toString());
+            });
+
+            broadcastEventUpdate(roomCode);
+        });
+
+        // NOWOŚĆ: Gracz używa akcji
+        socket.on("use_action", async (data: { roomCode: string; eventId: string; characterId: string; actionType: 'main' | 'fast' | 'special' }) => {
+            const { roomCode, eventId, characterId, actionType } = data;
+            const event = activeEventByRoom.get(roomCode);
+
+            if (!event || event._id.toString() !== eventId) return;
+
+            const participant = event.participants.find(p => p.characterId.toString() === characterId);
+
+            if (participant) {
+                if (actionType === 'main' && participant.mainActions > 0) {
+                    participant.mainActions--;
+                } else if (actionType === 'fast' && participant.fastActions > 0) {
+                    participant.fastActions--;
+                } else if (actionType === 'special' && participant.specialActions > 0) {
+                    participant.specialActions--;
+                }
+
+                const isCurrentTurn = event.turnOrder[event.currentTurnIndex].toString() === characterId;
+                if (isCurrentTurn && participant.mainActions === 0 && participant.fastActions === 0) {
+                    const nextIndex = (event.currentTurnIndex + 1) % event.turnOrder.length;
+                    event.currentTurnIndex = nextIndex;
+
+                    const newActiveParticipant = event.participants.find(p => p.characterId.toString() === event.turnOrder[nextIndex].toString());
+                    if (newActiveParticipant) {
+                        newActiveParticipant.mainActions = 1;
+                        newActiveParticipant.fastActions = 1;
+                    }
+                }
+            }
+
+            await Event.findByIdAndUpdate(eventId, { participants: event.participants, currentTurnIndex: event.currentTurnIndex });
+            broadcastEventUpdate(roomCode);
+        });
+
+        // NOWOŚĆ: Gracz ręcznie kończy swoją turę
+        socket.on("end_my_turn", async (data: { roomCode: string; eventId: string; characterId: string }) => {
+            const { roomCode, eventId, characterId } = data;
+            const event = activeEventByRoom.get(roomCode);
+
+            if (!event || event._id.toString() !== eventId) return;
+
+            if (event.turnOrder[event.currentTurnIndex].toString() !== characterId) {
+                return socket.emit("error", { message: "Not your turn." });
+            }
+
+            const nextIndex = (event.currentTurnIndex + 1) % event.turnOrder.length;
+            event.currentTurnIndex = nextIndex;
+
+            const newActiveParticipant = event.participants.find(p => p.characterId.toString() === event.turnOrder[nextIndex].toString());
+            if (newActiveParticipant) {
+                newActiveParticipant.mainActions = 1;
+                newActiveParticipant.fastActions = 1;
+            }
+
+            await Event.findByIdAndUpdate(eventId, { currentTurnIndex: event.currentTurnIndex, participants: event.participants });
+            broadcastEventUpdate(roomCode);
         });
 
     });
