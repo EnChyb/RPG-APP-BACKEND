@@ -62,6 +62,11 @@ export const createEvent: RequestHandler = async (
                 ownerId: character.owner, // Przekazujemy ObjectId bezpośrednio
                 side: input.side,
                 status: 'Active',
+                // NOWOŚĆ: Inicjalizacja wartości domyślnych
+                mainActions: 1,
+                fastActions: 1,
+                specialActions: 0,
+                canReact: false,
             };
         });
 
