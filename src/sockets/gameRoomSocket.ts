@@ -6,7 +6,6 @@ import Character, { ICharacter } from "../models/Character.js";
 import Event, { IEvent } from "../models/Event.js";
 
 type ActionType = 'main' | 'fast' | 'special';
-// Definicja ról w pokoju gry
 type RoomRole = 'RoomMaster' | 'Participant';
 
 interface UseActionPayload {
@@ -23,7 +22,6 @@ interface EndMyTurnPayload {
     characterId: string;
 }
 
-// Interfejs uczestnika pokoju gry
 interface RoomParticipant {
     socketId: string;
     userId: string;
@@ -34,9 +32,8 @@ interface RoomParticipant {
     roomRole: RoomRole;
 }
 
-// Interfejs dla stanu pokoju gry
 interface GameRoomState {
-    roomMasterId: string; // socket.id aktualnego MPG
+    roomMasterId: string;
     participants: RoomParticipant[];
 }
 
@@ -208,12 +205,6 @@ export function initGameRoomSocket(server: HttpServer) {
                 console.log(`User ${userId} created room ${roomCode} and is now RoomMaster.`);
                 socket.emit("room_created", { roomCode });
             } else {
-                // // Pokój już istnieje - dołącza jako UG
-                // if (roomState.participants.some(p => p.userId === userId)) {
-                //     console.log(`User ${userId} is already in room ${roomCode}. Reconnecting...`);
-                // } else {
-                //     roomState.participants.push(newParticipant);
-                // }
                 if (!roomState.participants.some(p => p.userId === userId)) {
                     roomState.participants.push(newParticipant);
                 }
@@ -692,7 +683,12 @@ export function initGameRoomSocket(server: HttpServer) {
             }
 
             const isCurrentTurn = event.turnOrder[event.currentTurnIndex].toString() === characterId;
-            if (isCurrentTurn && !isReaction && participant.mainActions === 0 && participant.fastActions === 0) {
+            const isOutOfActions = participant.mainActions === 0 && participant.fastActions === 0;
+
+            // Sprawdzamy, czy ktoś inny ma flagę do reakcji
+            const reactionIsPending = event.participants.some(p => p.canReact && p.characterId.toString() !== characterId);
+
+            if (isCurrentTurn && !isReaction && isOutOfActions && !reactionIsPending) {
                 await advanceTurn(event);
             } else {
                 await Event.findByIdAndUpdate(eventId, { participants: event.participants });
@@ -763,160 +759,3 @@ export function initGameRoomSocket(server: HttpServer) {
 
     return io;
 }
-
-
-// // 3. MPG prosi o przejście do następnej RUNDY
-// // Zgodnie z instrukcją YZE, ten handler zarządza przechodzeniem między Turami poszczególnych
-// // postaci w obrębie jednej Rundy walki.
-// socket.on("request_next_round", async (data: { roomCode: string }) => {
-//     const { roomCode } = data;
-//     const event = activeEventByRoom.get(roomCode);
-//     const roomState = gameRooms.get(roomCode);
-
-//     // if (!event || !roomState || roomState.roomMasterId !== socket.id) return;
-//     if (!event || !roomState) return;
-
-//     // Sprawdzenie uprawnień: tylko MPG lub właściciel aktywnej postaci
-//     const activeParticipantId = event.turnOrder[event.currentTurnIndex]?.toString();
-//     const activeParticipantOwner = event.participants.find(p => p.characterId.toString() === activeParticipantId)?.ownerId.toString();
-
-//     if (roomState.roomMasterId !== socket.id && activeParticipantOwner !== socket.data.user._id.toString()) {
-//         return;
-//     }
-
-//     // Przesuń wskaźnik tury postaci, zapętlając go na końcu
-//     const nextIndex = (event.currentTurnIndex + 1);
-//     let isNewRound = false;
-
-//     // Jeśli wskaźnik przekroczy liczbę uczestników, kończy się bieżąca Runda i zaczyna nowa.
-//     if (nextIndex >= event.turnOrder.length) {
-//         event.round += 1;
-//         event.currentTurnIndex = 0;
-//         isNewRound = true;
-
-//         // } else {
-//         //     event.currentTurnIndex = nextIndex;
-//         // }
-
-//         // Zgodnie z zasadami YZE, akcje resetują się dla WSZYSTKICH
-//         // na początku każdej nowej Rundy.
-//         event.participants.forEach((p) => {
-//             p.mainActions = 1;
-//             p.fastActions = 1;
-//             // p.specialActions = X; // Opcjonalnie reset akcji specjalnych
-//         });
-//     }
-
-//     event.currentTurnIndex = nextIndex;
-
-//     // NOWOŚĆ: Pętla sprawdzająca, czy kolejne postacie mają akcje. Jeśli nie, pomija ich Turę.
-//     let skippedCount = 0;
-//     while (skippedCount < event.turnOrder.length) {
-//         const currentId = event.turnOrder[event.currentTurnIndex].toString();
-//         const participantToCheck = event.participants.find(p => p.characterId.toString() === currentId);
-
-//         if (participantToCheck && participantToCheck.mainActions === 0 && participantToCheck.fastActions === 0) {
-//             event.currentTurnIndex = (event.currentTurnIndex + 1) % event.turnOrder.length;
-
-//             // Jeśli pętla pomijania zatoczyła pełne koło, to znaczy, że wszyscy pominęli Turę.
-//             // W takim wypadku wymuszamy nową Rundę i resetujemy akcje.
-//             if (event.currentTurnIndex === nextIndex && !isNewRound) {
-//                 event.round += 1;
-//                 isNewRound = true;
-//                 event.participants.forEach(p => {
-//                     p.mainActions = 1;
-//                     p.fastActions = 1;
-//                 });
-//             }
-//             skippedCount++;
-//         } else {
-//             break; // Znaleziono postać z akcjami, przerywamy pętlę.
-//         }
-//     }
-
-//     // // Resetuj akcje dla nowej aktywnej postaci i możliwość reakcji dla wszystkich
-//     // event.participants.forEach((p) => {
-//     //     const isNowActive = event.turnOrder[event.currentTurnIndex].toString() === p.characterId.toString();
-//     //     if (isNowActive) {
-//     //         p.mainActions = 1;
-//     //         p.fastActions = 1;
-//     //     }
-//     //     p.canReact = false;
-//     // });
-
-
-//     // Reset flagi `canReact` dla wszystkich na początku Tury nowej postaci
-//     event.participants.forEach(p => p.canReact = false);
-
-//     await Event.findByIdAndUpdate(event._id, {
-//         round: event.round,
-//         currentTurnIndex: event.currentTurnIndex,
-//         participants: event.participants,
-//     });
-
-//     broadcastEventUpdate(roomCode);
-// });
-
-// // NOWOŚĆ: Gracz używa akcji
-// socket.on("use_action", async (data: { roomCode: string; eventId: string; characterId: string; actionType: 'main' | 'fast' | 'special' }) => {
-//     const { roomCode, eventId, characterId, actionType } = data;
-//     const event = activeEventByRoom.get(roomCode);
-
-//     if (!event || event._id.toString() !== eventId) return;
-
-//     const participant = event.participants.find(p => p.characterId.toString() === characterId);
-
-//     if (participant) {
-//         if (actionType === 'main' && participant.mainActions > 0) {
-//             participant.mainActions--;
-//         } else if (actionType === 'fast' && participant.fastActions > 0) {
-//             participant.fastActions--;
-//         } else if (actionType === 'special' && participant.specialActions > 0) {
-//             participant.specialActions--;
-//         }
-
-//         const isCurrentTurn = event.turnOrder[event.currentTurnIndex].toString() === characterId;
-//         if (isCurrentTurn && participant.mainActions === 0 && participant.fastActions === 0) {
-//             const nextIndex = (event.currentTurnIndex + 1) % event.turnOrder.length;
-//             event.currentTurnIndex = nextIndex;
-
-//             const newActiveParticipant = event.participants.find(p => p.characterId.toString() === event.turnOrder[nextIndex].toString());
-//             if (newActiveParticipant) {
-//                 newActiveParticipant.mainActions = 1;
-//                 newActiveParticipant.fastActions = 1;
-//             }
-//         }
-//     }
-
-//     await Event.findByIdAndUpdate(eventId, { participants: event.participants, currentTurnIndex: event.currentTurnIndex });
-//     broadcastEventUpdate(roomCode);
-// });
-
-// // NOWOŚĆ: Gracz ręcznie kończy swoją turę
-// socket.on("end_my_turn", async (data: { roomCode: string; eventId: string; characterId: string }) => {
-//     const { roomCode, eventId, characterId } = data;
-//     const event = activeEventByRoom.get(roomCode);
-
-//     if (!event || event._id.toString() !== eventId) return;
-
-//     if (event.turnOrder[event.currentTurnIndex].toString() !== characterId) {
-//         return socket.emit("error", { message: "Not your turn." });
-//     }
-
-//     const nextIndex = (event.currentTurnIndex + 1) % event.turnOrder.length;
-//     event.currentTurnIndex = nextIndex;
-
-//     const newActiveParticipant = event.participants.find(p => p.characterId.toString() === event.turnOrder[nextIndex].toString());
-//     if (newActiveParticipant) {
-//         newActiveParticipant.mainActions = 1;
-//         newActiveParticipant.fastActions = 1;
-//     }
-
-//     await Event.findByIdAndUpdate(eventId, { currentTurnIndex: event.currentTurnIndex, participants: event.participants });
-//     broadcastEventUpdate(roomCode);
-// });
-
-//     });
-
-//     return io;
-// }
