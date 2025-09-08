@@ -1,6 +1,8 @@
+// src/models/User.ts
 import mongoose, { Document } from "mongoose";
 
-interface IUser extends Document {
+export interface IUser extends Document {
+  _id: mongoose.Types.ObjectId;
   firstName?: string;
   lastName?: string;
   email: string;
