@@ -91,6 +91,14 @@ interface StartEventData {
     event: IEvent; // Pełny obiekt eventu zwrócony z API
 }
 
+// NOWY INTERFEJS
+interface CharacterTransferData {
+    roomCode: string;
+    fromUser: { id: string; name: string };
+    toUser: { id: string; name: string; email: string };
+    character: { name: string };
+}
+
 interface SubmitInitiativeData {
     roomCode: string;
     eventId: string;
@@ -740,6 +748,13 @@ export function initGameRoomSocket(server: HttpServer) {
             // Poinformuj klientów o zakończeniu eventu
             io.to(roomCode).emit("event_ended", { eventId: event._id.toString() });
             console.log(`Event "${event.name}" ended in room ${roomCode}`);
+        });
+
+        // NOWY HANDLER
+        socket.on("character_transferred", (data: CharacterTransferData) => {
+            console.log(`Character transfer notification in room ${data.roomCode}`);
+            // Roześlij informację do wszystkich w pokoju
+            io.to(data.roomCode).emit("notify_character_transferred", data);
         });
 
         // Gracz informuje o wybranych celach do reakcji
