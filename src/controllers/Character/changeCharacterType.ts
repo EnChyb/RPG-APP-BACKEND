@@ -41,9 +41,19 @@ export const changeCharacterType: RequestHandler = async (
         if (characterType === "Monster") {
             character.archetype = undefined;
             character.race = undefined;
-            character.age = undefined;
-        } else {
+            // Ustawiamy domyślny gatunek, jeśli go nie ma
+            if (!character.species) {
+                character.species = 'Unknown';
+            }
+        } else { // Jeśli nowy typ to Hero lub NPC
             character.species = undefined;
+            // Ustawiamy domyślne wartości, jeśli ich nie ma
+            if (!character.archetype) {
+                character.archetype = 'Unknown';
+            }
+            if (!character.race) {
+                character.race = 'Unknown';
+            }
         }
 
         await character.save();
