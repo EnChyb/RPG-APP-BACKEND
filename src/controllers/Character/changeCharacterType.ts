@@ -4,7 +4,10 @@ import Character from "../../models/Character.js";
 import { AuthenticatedRequest } from "../../middlewares/authMiddleware.js";
 
 interface ChangeTypeBody {
-    characterType: "Hero" | "NPC" | "Monster";
+    newType: "Hero" | "NPC" | "Monster";
+    race?: string;
+    archetype?: string;
+    species?: string;
 }
 
 export const changeCharacterType: RequestHandler = async (
@@ -14,12 +17,8 @@ export const changeCharacterType: RequestHandler = async (
 ): Promise<void> => {
     try {
         const { id } = req.params;
-        const { characterType } = req.body as ChangeTypeBody;
-
-        if (!characterType || !["Hero", "NPC", "Monster"].includes(characterType)) {
-            res.status(400).json({ message: "Invalid or missing characterType" });
-            return;
-        }
+        const { newType, race, archetype, species } = req.body as ChangeTypeBody;
+        const userId = req.user?.id;
 
         const character = await Character.findById(id);
 
@@ -28,31 +27,33 @@ export const changeCharacterType: RequestHandler = async (
             return;
         }
 
-        if (character.owner.toString() !== req.user?.id) {
-            res.status(403).json({
-                message: "Forbidden: You are not allowed to modify this character.",
-            });
+        if (character.owner.toString() !== userId) {
+            res.status(403).json({ message: "Forbidden: Not your character" });
             return;
         }
 
-        character.characterType = characterType;
+        character.characterType = newType;
 
         // Logika czyszczenia pól w zależności od nowego typu
-        if (characterType === "Monster") {
-            character.archetype = undefined;
+        if (newType === "Monster") {
+            if (!species) {
+                res.status(400).json({ message: "Species is required for Monster type" });
+                return;
+            }
+            character.species = species;
             character.race = undefined;
-            // Ustawiamy domyślny gatunek, jeśli go nie ma
-            if (!character.species) {
-                character.species = 'Unknown';
+            character.archetype = undefined;
+            character.age = undefined;
+        } else { // zmiana na Hero lub NPC
+            if (!race || !archetype) {
+                res.status(400).json({ message: "Race and Archetype are required for Hero/NPC type" });
+                return;
             }
-        } else { // Jeśli nowy typ to Hero lub NPC
+            character.race = race;
+            character.archetype = archetype;
             character.species = undefined;
-            // Ustawiamy domyślne wartości, jeśli ich nie ma
-            if (!character.archetype) {
-                character.archetype = 'Unknown';
-            }
-            if (!character.race) {
-                character.race = 'Unknown';
+            if (!character.age) { // Ustaw domyślny wiek, jeśli nie istnieje
+                character.age = { en: "Adult", pl: "Dorosły" };
             }
         }
 
