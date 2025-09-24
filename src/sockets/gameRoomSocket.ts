@@ -106,6 +106,12 @@ interface SubmitInitiativeData {
     initiative: number;
 }
 
+interface WaiveReactionPayload {
+    roomCode: string;
+    eventId: string;
+    characterId: string;
+}
+
 export function initGameRoomSocket(server: HttpServer) {
     const io = new Server(server, {
         cors: {
@@ -769,6 +775,31 @@ export function initGameRoomSocket(server: HttpServer) {
             });
 
             broadcastEventUpdate(roomCode);
+        });
+
+        // ZMIANA: Dodano nowy handler do obsługi rezygnacji z reakcji.
+        socket.on("waive_reaction", async (data: WaiveReactionPayload) => {
+            const { roomCode, eventId, characterId } = data;
+            const event = activeEventByRoom.get(roomCode);
+
+            if (!event || event._id.toString() !== eventId) return;
+
+            const participant = event.participants.find(p => p.characterId.toString() === characterId);
+
+            if (participant && participant.canReact) {
+                participant.canReact = false;
+
+                // Aktualizujemy stan na serwerze i w bazie
+                await Event.findByIdAndUpdate(eventId, { participants: event.participants });
+
+                // Informujemy wszystkich o zmianie stanu eventu (ikona D20 zniknie)
+                broadcastEventUpdate(roomCode);
+
+                // Wysyłamy powiadomienie do wszystkich, że ten gracz zrezygnował z reakcji
+                io.to(roomCode).emit("reaction_waived_notification", {
+                    characterName: participant.characterName
+                });
+            }
         });
     });
 
