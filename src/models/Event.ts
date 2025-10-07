@@ -7,11 +7,13 @@ export interface IEventParticipant {
     characterName: string;
     characterAvatar: string;
     characterType: "Hero" | "NPC" | "Monster";
+    race?: string;
+    archetype?: string;
+    species?: string;
     ownerId: Types.ObjectId;
-    side: 'A' | 'B'; // Strona A (np. gracze) i strona B (np. wrogowie)
+    side: 'A' | 'B';
     initiative?: number; // Wynik rzutu na inicjatywę (opcjonalny)
     status: 'Active' | 'Defeated'; // Status postaci w evencie
-    // NOWOŚĆ: Dodane pola do śledzenia akcji i reakcji
     mainActions: number;
     fastActions: number;
     specialActions: number;
@@ -41,16 +43,18 @@ const EventParticipantSchema = new Schema<IEventParticipant>({
     characterName: { type: String, required: true },
     characterAvatar: { type: String, required: true },
     characterType: { type: String, enum: ["Hero", "NPC", "Monster"], required: true },
+    race: { type: String },
+    archetype: { type: String },
+    species: { type: String },
     ownerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     side: { type: String, enum: ['A', 'B'], required: true },
     initiative: { type: Number },
     status: { type: String, enum: ['Active', 'Defeated'], default: 'Active' },
-    // NOWOŚĆ: Dodane definicje w schemie
     mainActions: { type: Number, default: 1 },
     fastActions: { type: Number, default: 1 },
     specialActions: { type: Number, default: 0 },
     canReact: { type: Boolean, default: false },
-}, { _id: false }); // _id: false, bo to subdokument
+}, { _id: false });
 
 // Główna Schema dla Eventu
 const EventSchema = new Schema<IEvent>(
@@ -63,8 +67,8 @@ const EventSchema = new Schema<IEvent>(
         participants: [EventParticipantSchema],
         turnOrder: [{ type: Schema.Types.ObjectId, ref: "Character" }],
         currentTurnIndex: { type: Number, default: 0 },
-        round: { type: Number, default: 1 }, // ZMIANA: Runda
-        turn: { type: Number, default: 1 },  // ZMIANA: Tura
+        round: { type: Number, default: 1 },
+        turn: { type: Number, default: 1 },
     },
     { timestamps: true }
 );
