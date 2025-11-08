@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document } from "mongoose";
+import { IArmor, ArmorSchema } from "./Armor.js";
 
 export interface IWeapon extends Document {
   _id: string;
@@ -6,7 +7,7 @@ export interface IWeapon extends Document {
     pl: string;
     en: string;
   };
-  grip: number;
+  grip: 1 | 2;
   hand?: 'right' | 'left' | 'both';
   damageType: {
     pl: string;
@@ -24,6 +25,11 @@ export interface IWeapon extends Document {
   };
   price: number;
   createdByUser: boolean;
+  derivedFrom?: {
+  collection: 'armor';
+  mode: 'shield-as-weapon';
+  armor: IArmor;
+};
 }
 
 export const WeaponSchema: Schema = new Schema({
@@ -53,6 +59,12 @@ export const WeaponSchema: Schema = new Schema({
   },
   price: { type: Number, required: true, default: 0 },
   createdByUser: { type: Boolean, default: false },
-});
+  derivedFrom: {
+      collection: { type: String, enum: ["armor"], required: false },
+      mode: { type: String, enum: ["shield-as-weapon"], required: false },
+      armor: { type: ArmorSchema, required: false },
+    },
+  },
+);
 
 export default mongoose.model<IWeapon>("Weapon", WeaponSchema, "weapons");
