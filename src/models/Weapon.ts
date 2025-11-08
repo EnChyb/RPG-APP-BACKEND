@@ -18,6 +18,7 @@ export interface IWeapon extends Document {
   diceType: number;
   weight: number;
   damage: number;
+  defence?: number;
   range: number;
   description: {
     pl: string;
@@ -52,6 +53,7 @@ export const WeaponSchema: Schema = new Schema({
   diceType: { type: Number, required: true },
   weight: { type: Number, required: true },
   damage: { type: Number, required: true },
+  defence: { type: Number, required: false },
   range: { type: Number, required: true },
   description: {
     pl: { type: String },
