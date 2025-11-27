@@ -2,7 +2,7 @@
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { socketAuthMiddleware } from "../middlewares/socketAuthMiddleware.js";
-import Character, { ICharacter } from "../models/Character.js";
+import Character, { ICharacter, ISkill } from "../models/Character.js";
 import Event, { IEvent } from "../models/Event.js";
 
 type ActionType = 'main' | 'fast' | 'special';
@@ -84,6 +84,12 @@ interface HeroCardFull {
     species: string;
     characterType: "Hero" | "NPC" | "Monster";
     age: 'Young' | 'Adult' | 'Old';
+    // Dodane pola - typy pobierane z ICharacter
+    attributes: ICharacter['attributes'];
+    skills: Record<string, ISkill>; // lub ICharacter['skills']
+    items: ICharacter['items'];
+    additionalSkills?: ISkill[];
+    talents?: ICharacter['talents'];
 }
 
 interface StartEventData {
@@ -91,7 +97,6 @@ interface StartEventData {
     event: IEvent; // Pełny obiekt eventu zwrócony z API
 }
 
-// NOWY INTERFEJS
 interface CharacterTransferData {
     roomCode: string;
     fromUser: { id: string; name: string };
@@ -415,6 +420,11 @@ export function initGameRoomSocket(server: HttpServer) {
                     species: character.species || "",
                     characterType: character.characterType,
                     age: character.age?.en || 'Adult',
+                    attributes: character.attributes,
+                    skills: character.skills,
+                    additionalSkills: character.additionalSkills,
+                    items: character.items,
+                    talents: character.talents
                 };
 
                 // roomCards.set(userId, cardData);
@@ -426,7 +436,7 @@ export function initGameRoomSocket(server: HttpServer) {
             }
         });
 
-        // --- Nowy handler dla wyboru wielu bohaterów przez MPG ---
+        // --- Handler dla wyboru wielu bohaterów przez MPG ---
         socket.on("select_active_heroes", async (data: { roomCode: string; characterIds: string[] }) => {
             const { roomCode, characterIds } = data;
             const userId = socket.data.user._id.toString();
@@ -439,6 +449,11 @@ export function initGameRoomSocket(server: HttpServer) {
                     _id: c._id.toString(), name: c.name, avatar: c.avatar,
                     race: c.race || '', archetype: c.archetype || '', species: c.species || '',
                     characterType: c.characterType, age: c.age?.en || 'Adult',
+                    attributes: c.attributes,
+                    skills: c.skills,
+                    additionalSkills: c.additionalSkills,
+                    items: c.items,
+                    talents: c.talents
                 }));
                 roomCards.set(userId, cardData);
                 broadcastActiveCards(roomCode);
@@ -472,6 +487,11 @@ export function initGameRoomSocket(server: HttpServer) {
                     _id: c._id.toString(), name: c.name, avatar: c.avatar,
                     race: c.race || '', archetype: c.archetype || '', species: c.species || '',
                     characterType: c.characterType, age: c.age?.en || 'Adult',
+                    attributes: c.attributes,
+                    skills: c.skills,
+                    additionalSkills: c.additionalSkills,
+                    items: c.items,
+                    talents: c.talents
                 }));
                 roomNpcs.set(userId, cardData);
                 broadcastActiveNpcs(roomCode);
@@ -493,6 +513,11 @@ export function initGameRoomSocket(server: HttpServer) {
                     _id: c._id.toString(), name: c.name, avatar: c.avatar,
                     race: c.race || '', archetype: c.archetype || '', species: c.species || '',
                     characterType: c.characterType, age: c.age?.en || 'Adult',
+                    attributes: c.attributes,
+                    skills: c.skills,
+                    additionalSkills: c.additionalSkills,
+                    items: c.items,
+                    talents: c.talents
                 }));
                 roomMonsters.set(userId, cardData);
                 broadcastActiveMonsters(roomCode);
@@ -756,7 +781,6 @@ export function initGameRoomSocket(server: HttpServer) {
             console.log(`Event "${event.name}" ended in room ${roomCode}`);
         });
 
-        // NOWY HANDLER
         socket.on("character_transferred", (data: CharacterTransferData) => {
             console.log(`Character transfer notification in room ${data.roomCode}`);
             // Roześlij informację do wszystkich w pokoju
@@ -777,7 +801,7 @@ export function initGameRoomSocket(server: HttpServer) {
             broadcastEventUpdate(roomCode);
         });
 
-        // ZMIANA: Dodano nowy handler do obsługi rezygnacji z reakcji.
+        // Dodano nowy handler do obsługi rezygnacji z reakcji.
         socket.on("waive_reaction", async (data: WaiveReactionPayload) => {
             const { roomCode, eventId, characterId } = data;
             const event = activeEventByRoom.get(roomCode);
