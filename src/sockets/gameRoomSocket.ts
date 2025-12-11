@@ -117,6 +117,27 @@ interface WaiveReactionPayload {
     characterId: string;
 }
 
+// Payload wysyłany przez atakującego
+interface DeclareAttackPayload {
+    roomCode: string;
+    eventId: string;
+    attackerId: string; // ID postaci atakującej
+    targetId: string;   // ID postaci broniącej się
+    weapon: {
+        name: string;
+        damage: number;
+        damageType: 'blunt' | 'slash' | 'pierce'; // Dostosuj do swoich typów
+        hand: 'main' | 'off' | 'two-handed';
+    };
+    hits: number;       // Liczba sukcesów ataku
+}
+
+// Payload wysyłany do obrońcy (trigger modala)
+interface IncomingAttackPayload extends DeclareAttackPayload {
+    attackerName: string;
+    attackerAvatar: string;
+}
+
 export function initGameRoomSocket(server: HttpServer) {
     const io = new Server(server, {
         cors: {
@@ -427,7 +448,6 @@ export function initGameRoomSocket(server: HttpServer) {
                     talents: character.talents
                 };
 
-                // roomCards.set(userId, cardData);
                 roomCards.set(userId, [cardData]);
                 broadcastActiveCards(roomCode);
             } catch (error) {
@@ -824,6 +844,46 @@ export function initGameRoomSocket(server: HttpServer) {
                     characterName: participant.characterName
                 });
             }
+        });
+
+        // Handler deklaracji ataku - przesyła dane do obrońcy
+        socket.on("declare_attack", async (data: DeclareAttackPayload) => {
+            const { roomCode, eventId, attackerId, targetId, hits } = data;
+            const event = activeEventByRoom.get(roomCode);
+
+            if (!event || event._id.toString() !== eventId) return;
+
+            // 1. Znajdź uczestników
+            const attackerPart = event.participants.find(p => p.characterId.toString() === attackerId);
+            const targetPart = event.participants.find(p => p.characterId.toString() === targetId);
+
+            if (!attackerPart || !targetPart) {
+                socket.emit("error", { message: "Attacker or Target not found in event" });
+                return;
+            }
+
+            // 2. Ustaw flagę canReact dla celu
+            targetPart.canReact = true;
+
+            // 3. Zaktualizuj Event w bazie (żeby stan był trwały)
+            await Event.findByIdAndUpdate(eventId, { participants: event.participants });
+
+            // 4. Wyślij aktualizację eventu do wszystkich (np. żeby inni widzieli ikonkę reakcji u celu)
+            broadcastEventUpdate(roomCode);
+
+            // 5. Pobranie avatara z bazy danych (bo nie ma go w IEventParticipant)
+            const attackerCharacter = await Character.findById(attackerId).select('avatar').lean();
+
+            // 6. Wyślij szczegóły ataku do pokoju (frontend przefiltruje to po userId/characterId)
+            const alertPayload: IncomingAttackPayload = {
+                ...data,
+                attackerName: attackerPart.characterName,
+                attackerAvatar: attackerCharacter?.avatar || ""
+            };
+
+            io.to(roomCode).emit("incoming_attack_alert", alertPayload);
+
+            console.log(`Attack declared in ${roomCode}: ${attackerPart.characterName} -> ${targetPart.characterName} (${hits} hits)`);
         });
     });
 
