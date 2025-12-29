@@ -46,7 +46,7 @@ export const registerCombatHandlers = (ctx: SocketContext) => {
     });
 
     socket.on("declare_attack", async (data: DeclareAttackPayload) => {
-        const { roomCode, eventId, attackerId, targetId, hits } = data;
+        const { roomCode, eventId, attackerId, targetId, hits, hitLocation } = data;
         const event = activeEventByRoom.get(roomCode);
 
         if (!event || event._id.toString() !== eventId) return;
@@ -75,6 +75,6 @@ export const registerCombatHandlers = (ctx: SocketContext) => {
 
         io.to(roomCode).emit("incoming_attack_alert", alertPayload);
 
-        console.log(`Attack declared in ${roomCode}: ${attackerPart.characterName} -> ${targetPart.characterName} (${hits} hits)`);
+        console.log(`Attack declared in ${roomCode}: ${attackerPart.characterName} -> ${targetPart.characterName} (${hits} hits, location: ${hitLocation})`);
     });
 };

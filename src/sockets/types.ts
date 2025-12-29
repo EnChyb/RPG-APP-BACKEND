@@ -97,6 +97,7 @@ export interface DeclareAttackPayload {
         hand: 'main' | 'off' | 'two-handed';
     };
     hits: number;
+    hitLocation: string;
 }
 
 export interface IncomingAttackPayload extends DeclareAttackPayload {
