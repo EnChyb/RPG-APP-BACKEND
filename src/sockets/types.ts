@@ -26,6 +26,7 @@ export interface JoinRoomData {
     roomCode: string;
     userId: string;
     characterId?: string;
+    createNew?: boolean;
 }
 
 export interface ChatMessageData {
@@ -105,8 +106,6 @@ export interface IncomingAttackPayload extends DeclareAttackPayload {
     attackerAvatar: string;
 }
 
-// --- Internal State Interfaces ---
-
 export interface RoomParticipant {
     socketId: string;
     userId: string;
@@ -138,8 +137,6 @@ export interface HeroCardFull {
     talents?: ICharacter['talents'];
 }
 
-// --- Context ---
-// Obiekt contextu przekazywany do każdego handlera
 export interface SocketContext {
     io: Server;
     socket: Socket;

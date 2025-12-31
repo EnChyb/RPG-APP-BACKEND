@@ -1,5 +1,6 @@
 // src/sockets/handlers/roomHandler.ts
-import { JoinRoomData, RoomParticipant, GameRoomState, SocketContext } from "../types.js";
+import { JoinRoomData, RoomParticipant, GameRoomState, SocketContext, HeroCardFull } from "../types.js";
+import Character, { ICharacter } from "../../models/Character.js";
 import {
     broadcastUserListUpdate,
     broadcastActiveCards,
@@ -11,8 +12,8 @@ import {
 export const registerRoomHandlers = (ctx: SocketContext) => {
     const { socket, io, gameRooms, activeCardsByRoom, activeNpcsByRoom, activeMonstersByRoom } = ctx;
 
-    socket.on("join_room", (data: JoinRoomData) => {
-        const { roomCode, userId } = data;
+    socket.on("join_room", async (data: JoinRoomData) => {
+        const { roomCode, userId, createNew, characterId } = data;
 
         if (socket.data.user._id.toString() !== userId) {
             socket.emit("error", { message: "Authorization error: UserId does not match" });
@@ -22,6 +23,13 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
         const roomCodePattern = /^.+-KOD:\d{5}-\d{6}$/;
         if (!roomCodePattern.test(roomCode)) {
             socket.emit("error", { message: "Incorrect room code format" });
+            return;
+        }
+
+        let roomState = gameRooms.get(roomCode);
+
+        if (!roomState && !createNew) {
+            socket.emit("error", { message: "Room not found" });
             return;
         }
 
@@ -42,7 +50,7 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
         if (!activeNpcsByRoom.has(roomCode)) activeNpcsByRoom.set(roomCode, new Map());
         if (!activeMonstersByRoom.has(roomCode)) activeMonstersByRoom.set(roomCode, new Map());
 
-        let roomState = gameRooms.get(roomCode);
+        roomState = gameRooms.get(roomCode);
 
         if (!roomState) {
             newParticipant.roomRole = 'RoomMaster';
@@ -59,6 +67,28 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
             }
             console.log(`User ${userId} joined room ${roomCode} as a Participant.`);
             socket.emit("room_joined", { roomCode });
+        }
+
+        if (characterId) {
+            try {
+                // Pobieramy postać z bazy
+                const character = await Character.findById(characterId).lean<ICharacter>();
+
+                // Sprawdzamy czy postać istnieje i należy do użytkownika
+                if (character && character.owner.toString() === userId) {
+                    const cardData = mapCharacterToHeroCardFull(character);
+                    const roomCards = activeCardsByRoom.get(roomCode);
+
+                    if (roomCards) {
+                        // Ustawiamy kartę jako aktywną dla tego gracza
+                        roomCards.set(userId, [cardData]);
+                        console.log(`User ${userId} auto-selected character ${character.name}`);
+                    }
+                }
+            } catch (error) {
+                console.error("Error auto-selecting character:", error);
+                // Nie przerywamy dołączania, tylko logujemy błąd (lub można wysłać socket.emit("error"))
+            }
         }
 
         broadcastUserListUpdate(ctx, roomCode);
@@ -136,3 +166,21 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
         });
     });
 };
+
+function mapCharacterToHeroCardFull(c: ICharacter): HeroCardFull {
+    return {
+        _id: c._id.toString(),
+        name: c.name,
+        avatar: c.avatar || "",
+        race: c.race || '',
+        archetype: c.archetype || '',
+        species: c.species || '',
+        characterType: c.characterType,
+        age: c.age?.en || 'Adult', // Bezpieczny dostęp, w ICharacter age jest zdefiniowane
+        attributes: c.attributes,
+        skills: c.skills,
+        additionalSkills: c.additionalSkills,
+        items: c.items,
+        talents: c.talents
+    };
+}
