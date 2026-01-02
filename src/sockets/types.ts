@@ -106,6 +106,18 @@ export interface IncomingAttackPayload extends DeclareAttackPayload {
     attackerAvatar: string;
 }
 
+export interface ResolveAttackPayload {
+    roomCode: string;
+    attackerId: string;
+    defenderId: string;
+    result: {
+        successes: number;
+        banes: number;
+        damage: number;
+    };
+    hitLocation?: string;
+}
+
 export interface RoomParticipant {
     socketId: string;
     userId: string;
