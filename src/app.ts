@@ -1,10 +1,6 @@
 import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
-//import path from "path";
-//import { fileURLToPath } from "url";
-import { setupSwagger } from "./config/swagger.js"; // Import Swaggera
-
 import authRouter from "./routes/authRoutes.js";
 import characterRoutes from "./routes/characterRoutes.js";
 import dataRouter from "./routes/dataRoutes.js";
@@ -27,14 +23,8 @@ const corsOptions = {
   credentials: true,
 };
 
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
-
 app.use(cors(corsOptions));
 app.use(express.json());
-//app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
-
-setupSwagger(app); // 🔥 Dodaj Swaggera tutaj
 
 app.use("/api/auth", authRouter);
 app.use("/api/characters", characterRoutes);
