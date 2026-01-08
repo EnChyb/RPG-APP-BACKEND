@@ -94,7 +94,7 @@ export interface DeclareAttackPayload {
     weapon: {
         name: string;
         damage: number;
-        damageType: 'blunt' | 'slash' | 'pierce';
+        damageType: string;
         hand: 'main' | 'off' | 'two-handed';
     };
     hits: number;
