@@ -118,6 +118,31 @@ export interface ResolveAttackPayload {
     hitLocation?: string;
 }
 
+// --- STRUKTURY DLA OBRONY ---
+// Struktura wyniku rzutu (uproszczona wersja RollResult z frontendu, wystarczająca do wyświetlenia)
+export interface SocketRollResult {
+    totalSuccesses: number;
+    failures: number;
+    push: boolean;
+}
+
+export interface DefenseOutcome {
+    actionType: 'parry' | 'dodge' | 'none';
+    defenseRoll: SocketRollResult | null;
+    armorName?: string;
+    armorAbsorbed: number;
+    damageTaken: number;
+    isHit: boolean;
+}
+
+export interface ResolveDefensePayload {
+    roomCode: string;
+    eventId: string;
+    defenderId: string;
+    attackerId: string;
+    outcome: DefenseOutcome;
+}
+
 export interface RoomParticipant {
     socketId: string;
     userId: string;
