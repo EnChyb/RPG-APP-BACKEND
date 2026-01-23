@@ -4,6 +4,7 @@ import Event from "../../models/Event.js";
 import {
     DeclareAttackPayload,
     IncomingAttackPayload,
+    ResolveDefensePayload,
     SocketContext,
     WaiveReactionPayload
 } from "../types.js";
@@ -64,7 +65,6 @@ export const registerCombatHandlers = (ctx: SocketContext) => {
         await Event.findByIdAndUpdate(eventId, { participants: event.participants });
         broadcastEventUpdate(ctx, roomCode);
 
-        // Pobranie avatara z bazy danych
         const attackerCharacter = await Character.findById(attackerId).select('avatar').lean();
 
         const alertPayload: IncomingAttackPayload = {
@@ -76,5 +76,38 @@ export const registerCombatHandlers = (ctx: SocketContext) => {
         io.to(roomCode).emit("incoming_attack_alert", alertPayload);
 
         console.log(`Attack declared in ${roomCode}: ${attackerPart.characterName} -> ${targetPart.characterName} (${hits} hits, location: ${hitLocation})`);
+    });
+
+    // NOWY HANDLER: Obsługa wyniku obrony
+    socket.on("resolve_defense", async (data: ResolveDefensePayload) => {
+        const { roomCode, eventId, defenderId, attackerId, outcome } = data;
+        const event = activeEventByRoom.get(roomCode);
+
+        if (!event || event._id.toString() !== eventId) return;
+
+        const defenderPart = event.participants.find(p => p.characterId.toString() === defenderId);
+        const attackerPart = event.participants.find(p => p.characterId.toString() === attackerId);
+
+        if (!defenderPart || !attackerPart) {
+            console.error(`Resolve Defense Error: Participants not found in room ${roomCode}`);
+            return;
+        }
+
+        // W tym miejscu można w przyszłości dodać logikę aktualizacji HP w bazie danych,
+        // jeśli damageTaken > 0.
+
+        // Reset flagi reakcji dla obrońcy
+        defenderPart.canReact = false;
+        await Event.findByIdAndUpdate(eventId, { participants: event.participants });
+        broadcastEventUpdate(ctx, roomCode);
+
+        // Rozgłoszenie wyniku do pokoju (dzięki temu atakujący otrzyma dane i zaktualizuje swój modal)
+        io.to(roomCode).emit("defense_resolved", {
+            defenderId,
+            attackerId,
+            outcome
+        });
+
+        console.log(`Defense resolved in ${roomCode}: ${defenderPart.characterName} vs ${attackerPart.characterName}. Damage taken: ${outcome.damageTaken}`);
     });
 };
