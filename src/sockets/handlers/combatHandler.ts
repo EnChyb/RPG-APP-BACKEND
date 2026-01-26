@@ -8,7 +8,7 @@ import {
     SocketContext,
     WaiveReactionPayload
 } from "../types.js";
-import { broadcastEventUpdate } from "../utils.js";
+import { broadcastEventUpdate, advanceTurn } from "../utils.js";
 
 export const registerCombatHandlers = (ctx: SocketContext) => {
     const { socket, io, activeEventByRoom } = ctx;
@@ -78,7 +78,7 @@ export const registerCombatHandlers = (ctx: SocketContext) => {
         console.log(`Attack declared in ${roomCode}: ${attackerPart.characterName} -> ${targetPart.characterName} (${hits} hits, location: ${hitLocation})`);
     });
 
-    // NOWY HANDLER: Obsługa wyniku obrony
+    // HANDLER: Obsługa wyniku obrony
     socket.on("resolve_defense", async (data: ResolveDefensePayload) => {
         const { roomCode, eventId, defenderId, attackerId, outcome } = data;
         const event = activeEventByRoom.get(roomCode);
@@ -93,10 +93,6 @@ export const registerCombatHandlers = (ctx: SocketContext) => {
             return;
         }
 
-        // W tym miejscu można w przyszłości dodać logikę aktualizacji HP w bazie danych,
-        // jeśli damageTaken > 0.
-
-        // Reset flagi reakcji dla obrońcy
         defenderPart.canReact = false;
         await Event.findByIdAndUpdate(eventId, { participants: event.participants });
         broadcastEventUpdate(ctx, roomCode);
@@ -109,5 +105,27 @@ export const registerCombatHandlers = (ctx: SocketContext) => {
         });
 
         console.log(`Defense resolved in ${roomCode}: ${defenderPart.characterName} vs ${attackerPart.characterName}. Damage taken: ${outcome.damageTaken}`);
+
+        // --- Automatyczne zakończenie tury po walce ---
+        // Sprawdzamy, czy to tura atakującego i czy skończyły mu się akcje
+        const currentTurnCharId = event.turnOrder[event.currentTurnIndex].toString();
+
+        if (currentTurnCharId === attackerId) {
+            const isOutOfActions = attackerPart.mainActions === 0 && attackerPart.fastActions === 0;
+            // Sprawdzamy też, czy nie ma innych wiszących reakcji (rzadkie, ale możliwe w multi-ataku)
+            const reactionIsPending = event.participants.some(p => p.canReact && p.characterId.toString() !== attackerId);
+
+            if (isOutOfActions && !reactionIsPending) {
+                console.log(`Attacker ${attackerPart.characterName} is out of actions after combat. Advancing turn...`);
+                // Opóźnienie 5 sekund, aby gracze zdążyli zobaczyć wynik w modalu
+                setTimeout(async () => {
+                    // Pobieramy event ponownie, żeby mieć pewność co do aktualnego stanu
+                    const currentEvent = activeEventByRoom.get(roomCode);
+                    if (currentEvent && currentEvent._id.toString() === eventId) {
+                        await advanceTurn(ctx, currentEvent);
+                    }
+                }, 5000);
+            }
+        }
     });
 };

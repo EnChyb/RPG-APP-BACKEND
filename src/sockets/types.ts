@@ -14,6 +14,7 @@ export interface UseActionPayload {
     characterId: string;
     actionType: ActionType;
     isReaction: boolean;
+    skipEndTurnCheck?: boolean;
 }
 
 export interface EndMyTurnPayload {
@@ -124,6 +125,7 @@ export interface SocketRollResult {
     totalSuccesses: number;
     failures: number;
     push: boolean;
+    typeOfDiceRoll?: string;
 }
 
 export interface DefenseOutcome {
