@@ -115,7 +115,7 @@ export const registerEventHandlers = (ctx: SocketContext) => {
     });
 
     socket.on("use_action", async (data: UseActionPayload) => {
-        const { roomCode, eventId, characterId, actionType, isReaction } = data;
+        const { roomCode, eventId, characterId, actionType, isReaction, skipEndTurnCheck } = data;
         const event = activeEventByRoom.get(roomCode);
         if (!event || event._id.toString() !== eventId) return;
 
@@ -134,7 +134,7 @@ export const registerEventHandlers = (ctx: SocketContext) => {
         const isOutOfActions = participant.mainActions === 0 && participant.fastActions === 0;
         const reactionIsPending = event.participants.some(p => p.canReact && p.characterId.toString() !== characterId);
 
-        if (isCurrentTurn && !isReaction && isOutOfActions && !reactionIsPending) {
+        if (isCurrentTurn && !isReaction && isOutOfActions && !reactionIsPending && !skipEndTurnCheck) {
             await advanceTurn(ctx, event);
         } else {
             await Event.findByIdAndUpdate(eventId, { participants: event.participants });
