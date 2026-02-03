@@ -2,7 +2,7 @@
 import { Server, Socket } from "socket.io";
 import { Server as HttpServer } from "http";
 import { socketAuthMiddleware } from "../middlewares/socketAuthMiddleware.js";
-import { GameRoomState, HeroCardFull, SocketContext } from "./types.js";
+import { GameRoomState, HeroCardFull, SocketContext, InvitationData } from "./types.js";
 import { IEvent } from "../models/Event.js";
 
 // Handlers Import
@@ -30,6 +30,7 @@ export function initGameRoomSocket(server: HttpServer) {
     const activeNpcsByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
     const activeMonstersByRoom: Map<string, Map<string, HeroCardFull[]>> = new Map();
     const activeEventByRoom: Map<string, IEvent> = new Map();
+    const pendingInvitations: Map<string, InvitationData[]> = new Map();
 
     io.use(socketAuthMiddleware);
 
@@ -43,7 +44,8 @@ export function initGameRoomSocket(server: HttpServer) {
             activeCardsByRoom,
             activeNpcsByRoom,
             activeMonstersByRoom,
-            activeEventByRoom
+            activeEventByRoom,
+            pendingInvitations,
         };
 
         // Register handlers
