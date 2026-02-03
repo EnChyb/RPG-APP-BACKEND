@@ -176,6 +176,20 @@ export interface HeroCardFull {
     talents?: ICharacter['talents'];
 }
 
+// --- Invitations ---
+export interface InvitationData {
+    roomCode: string;
+    gameName: string;
+    gmName: string;
+    targetEmail: string;
+}
+
+export interface SendInvitationsPayload {
+    roomCode: string;
+    gameName: string;
+    targetEmails: string[];
+}
+
 export interface SocketContext {
     io: Server;
     socket: Socket;
@@ -184,4 +198,5 @@ export interface SocketContext {
     activeNpcsByRoom: Map<string, Map<string, HeroCardFull[]>>;
     activeMonstersByRoom: Map<string, Map<string, HeroCardFull[]>>;
     activeEventByRoom: Map<string, IEvent>;
+    pendingInvitations: Map<string, InvitationData[]>;
 }

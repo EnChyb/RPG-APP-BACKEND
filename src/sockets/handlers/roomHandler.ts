@@ -1,5 +1,13 @@
 // src/sockets/handlers/roomHandler.ts
-import { JoinRoomData, RoomParticipant, GameRoomState, SocketContext, HeroCardFull } from "../types.js";
+import {
+    JoinRoomData,
+    RoomParticipant,
+    GameRoomState,
+    SocketContext,
+    HeroCardFull,
+    SendInvitationsPayload,
+    InvitationData
+} from "../types.js";
 import Character, { ICharacter } from "../../models/Character.js";
 import {
     broadcastUserListUpdate,
@@ -8,9 +16,18 @@ import {
     broadcastActiveMonsters,
     handleUserLeave
 } from "../utils.js";
+import User from "../../models/User.js";
 
 export const registerRoomHandlers = (ctx: SocketContext) => {
-    const { socket, io, gameRooms, activeCardsByRoom, activeNpcsByRoom, activeMonstersByRoom } = ctx;
+    const {
+        socket,
+        io,
+        gameRooms,
+        activeCardsByRoom,
+        activeNpcsByRoom,
+        activeMonstersByRoom,
+        pendingInvitations
+    } = ctx;
 
     socket.on("join_room", async (data: JoinRoomData) => {
         const { roomCode, userId, createNew, characterId } = data;
@@ -97,6 +114,53 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
         broadcastActiveMonsters(ctx, roomCode);
     });
 
+    // --- NEW: Wysyłanie zaproszeń ---
+    socket.on("send_invitations", async (data: SendInvitationsPayload) => {
+        const { roomCode, gameName, targetEmails } = data;
+        const senderName = `${socket.data.user.firstName} ${socket.data.user.lastName}`;
+        console.log(`Received invitation request from ${senderName} for emails:`, targetEmails);
+
+        for (const email of targetEmails) {
+            const cleanEmail = email.trim().toLowerCase();
+
+            // Weryfikacja czy użytkownik istnieje (opcjonalne, ale dobre dla UX)
+            const targetUser = await User.findOne({ email: cleanEmail });
+            if (!targetUser) {
+                console.log(`Skipping invite for ${cleanEmail} - User not found`);
+                continue; // Można też wysłać zwrotkę do klienta o błędzie
+            }
+
+            const invitation: InvitationData = {
+                roomCode,
+                gameName,
+                gmName: senderName,
+                targetEmail: cleanEmail
+            };
+
+            const existingInvites = pendingInvitations.get(cleanEmail) || [];
+            // Unikanie duplikatów
+            if (!existingInvites.some(inv => inv.roomCode === roomCode)) {
+                existingInvites.push(invitation);
+                pendingInvitations.set(cleanEmail, existingInvites);
+                console.log(`Invitation added for ${cleanEmail} to room ${roomCode}`);
+            }
+        }
+
+        socket.emit("invitations_sent_success");
+    });
+
+    // --- NEW: Sprawdzanie zaproszeń ---
+    socket.on("check_invitations", () => {
+        const userEmail = socket.data.user.email.toLowerCase();
+        const invites = pendingInvitations.get(userEmail) || [];
+
+        // Filtrowanie wygasłych zaproszeń (jeśli pokój już nie istnieje) - opcjonalne
+        // Ale ponieważ pokój jest tworzony w pamięci DOPIERO jak GM wejdzie,
+        // to zaproszenie może istnieć "przed" pokojem. Więc zwracamy wszystko.
+
+        socket.emit("your_invitations", { invitations: invites });
+    });
+
     socket.on("transfer_room_master", (data: { roomCode: string, newMasterUserId: string }) => {
         const { roomCode, newMasterUserId } = data;
         const roomState = gameRooms.get(roomCode);
@@ -154,6 +218,14 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
         activeMonstersByRoom.delete(roomCode);
         ctx.activeEventByRoom.delete(roomCode);
 
+        // Clean up pending invitations for this room
+        pendingInvitations.forEach((invites, email) => {
+            const filtered = invites.filter(inv => inv.roomCode !== roomCode);
+            if (filtered.length !== invites.length) {
+                pendingInvitations.set(email, filtered);
+            }
+        });
+
         console.log(`Room ${roomCode} deleted by Room Master.`);
     });
 
@@ -176,7 +248,7 @@ function mapCharacterToHeroCardFull(c: ICharacter): HeroCardFull {
         archetype: c.archetype || '',
         species: c.species || '',
         characterType: c.characterType,
-        age: c.age?.en || 'Adult', // Bezpieczny dostęp, w ICharacter age jest zdefiniowane
+        age: c.age?.en || 'Adult',
         attributes: c.attributes,
         skills: c.skills,
         additionalSkills: c.additionalSkills,

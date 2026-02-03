@@ -59,7 +59,15 @@ export const handleUserLeave = (ctx: SocketContext, roomCode: string) => {
         ctx.activeCardsByRoom.delete(roomCode);
         ctx.activeNpcsByRoom.delete(roomCode);
         ctx.activeMonstersByRoom.delete(roomCode);
-        ctx.activeEventByRoom.delete(roomCode); // Clean up event too
+        ctx.activeEventByRoom.delete(roomCode);
+
+        // Zapobiega "ghost invites" do nieistniejących pokoi
+        ctx.pendingInvitations.forEach((invites, email) => {
+            const filtered = invites.filter(inv => inv.roomCode !== roomCode);
+            if (filtered.length !== invites.length) {
+                ctx.pendingInvitations.set(email, filtered);
+            }
+        });
         console.log(`Room ${roomCode} is now empty and has been closed.`);
         return;
     }
