@@ -114,7 +114,7 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
         broadcastActiveMonsters(ctx, roomCode);
     });
 
-    // --- NEW: Wysyłanie zaproszeń ---
+    // --- Wysyłanie zaproszeń ---
     socket.on("send_invitations", async (data: SendInvitationsPayload) => {
         const { roomCode, gameName, targetEmails } = data;
         const senderName = `${socket.data.user.firstName} ${socket.data.user.lastName}`;
@@ -122,7 +122,6 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
 
         for (const email of targetEmails) {
             const cleanEmail = email.trim().toLowerCase();
-
             // Weryfikacja czy użytkownik istnieje (opcjonalne, ale dobre dla UX)
             const targetUser = await User.findOne({ email: cleanEmail });
             if (!targetUser) {
@@ -149,15 +148,10 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
         socket.emit("invitations_sent_success");
     });
 
-    // --- NEW: Sprawdzanie zaproszeń ---
+    // --- Sprawdzanie zaproszeń ---
     socket.on("check_invitations", () => {
         const userEmail = socket.data.user.email.toLowerCase();
         const invites = pendingInvitations.get(userEmail) || [];
-
-        // Filtrowanie wygasłych zaproszeń (jeśli pokój już nie istnieje) - opcjonalne
-        // Ale ponieważ pokój jest tworzony w pamięci DOPIERO jak GM wejdzie,
-        // to zaproszenie może istnieć "przed" pokojem. Więc zwracamy wszystko.
-
         socket.emit("your_invitations", { invitations: invites });
     });
 
@@ -205,26 +199,50 @@ export const registerRoomHandlers = (ctx: SocketContext) => {
             return;
         }
 
+        // 1. Powiadamiamy wszystkich w pokoju, że pokój znika
         io.to(roomCode).emit("room_deleted");
+
+        // 2. Wymuszamy wyjście z kanału socketowego
         const clients = Array.from(io.sockets.adapter.rooms.get(roomCode) || []);
         clients.forEach(clientId => {
             const clientSocket = io.sockets.sockets.get(clientId);
             clientSocket?.leave(roomCode);
         });
 
+        // 3. Usuwamy dane pokoju z pamięci serwera
         gameRooms.delete(roomCode);
         activeCardsByRoom.delete(roomCode);
         activeNpcsByRoom.delete(roomCode);
         activeMonstersByRoom.delete(roomCode);
         ctx.activeEventByRoom.delete(roomCode);
 
-        // Clean up pending invitations for this room
+        // 4. Czyścimy zaproszenia I POWIADAMIAMY zaproszonych, jeśli są online
+        const affectedEmails: string[] = [];
         pendingInvitations.forEach((invites, email) => {
+            const initialLength = invites.length;
             const filtered = invites.filter(inv => inv.roomCode !== roomCode);
-            if (filtered.length !== invites.length) {
+
+            if (filtered.length !== initialLength) {
                 pendingInvitations.set(email, filtered);
+                affectedEmails.push(email);
             }
         });
+
+        // 5. Jeśli ktoś, komu usunęliśmy zaproszenie, siedzi w Lobby (joinGame),
+        // wysyłamy mu zaktualizowaną listę natychmiast.
+        if (affectedEmails.length > 0) {
+            const connectedSockets = Array.from(io.sockets.sockets.values());
+
+            connectedSockets.forEach(connectedSocket => {
+                const socketUserEmail = connectedSocket.data?.user?.email?.toLowerCase();
+
+                if (socketUserEmail && affectedEmails.includes(socketUserEmail)) {
+                    const currentInvites = pendingInvitations.get(socketUserEmail) || [];
+                    connectedSocket.emit("your_invitations", { invitations: currentInvites });
+                    console.log(`Live invitation update sent to ${socketUserEmail} after room deletion.`);
+                }
+            });
+        }
 
         console.log(`Room ${roomCode} deleted by Room Master.`);
     });
